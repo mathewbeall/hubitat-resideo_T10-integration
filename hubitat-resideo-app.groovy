@@ -44,23 +44,48 @@ def mainPage() {
                 href "credentialsPage", title: "Setup Developer Credentials", description: "Enter your Resideo API credentials"
             } else {
                 paragraph "✅ Developer credentials configured"
-                paragraph "Client ID: ${settings.clientId}"
                 href "credentialsPage", title: "Update Credentials", description: "Change developer credentials"
             }
         }
 
+        // Only show API connection section if OAuth is enabled and credentials are provided
         if (settings.clientId && settings.clientSecret) {
-            section("API Connection") {
-                if (state.resideoAccessToken) {
-                    paragraph "✅ Connected to Resideo API"
-                    paragraph "Access token expires: ${state.tokenExpires}"
-                    input "refreshToken", "bool", title: "Refresh API Token", submitOnChange: true, defaultValue: false
-                } else {
-                    paragraph "⚠️ Not connected to Resideo API"
-                    if (!state.resideoAccessToken) {
-                        href "oauthInitialize", title: "Connect to Resideo API", description: "Authorize access to your thermostats"
-                        href "authPage", title: "Manual Token Entry", description: "Enter tokens manually if OAuth fails"
+            // Check if OAuth is actually enabled by trying to create access token
+            def oauthEnabled = true
+            try {
+                if (!state.accessToken) {
+                    createAccessToken()
+                }
+            } catch (Exception e) {
+                oauthEnabled = false
+            }
+
+            if (oauthEnabled) {
+                section("API Connection") {
+                    if (state.resideoAccessToken) {
+                        paragraph "✅ Connected to Resideo API"
+                        paragraph "Access token expires: ${state.tokenExpires}"
+                        input "refreshToken", "bool", title: "Refresh API Token", submitOnChange: true, defaultValue: false
+                    } else {
+                        paragraph "⚠️ Not connected to Resideo API"
+                        if (!state.resideoAccessToken) {
+                            href "oauthInitialize", title: "Connect to Resideo API", description: "Authorize access to your thermostats"
+                            href "authPage", title: "Manual Token Entry", description: "Enter tokens manually if OAuth fails"
+                        }
                     }
+                }
+            } else {
+                section("🚨 OAuth Required Before API Connection") {
+                    paragraph """
+                    <div style='background-color:#fff3e0; border:2px solid #f57c00; padding:10px; border-radius:5px;'>
+                        <p style='color:#ef6c00; font-weight:bold; margin:0;'>
+                            ⚠️ OAuth must be enabled before you can connect to Resideo API
+                        </p>
+                        <p style='color:#666; margin:5px 0 0 0; font-size:14px;'>
+                            Go to Apps Code → Find this app → Click 3 dots (⋯) next to Save → OAuth → Enable OAuth in App
+                        </p>
+                    </div>
+                    """
                 }
             }
         }
@@ -93,34 +118,38 @@ def mainPage() {
 
         section("API Information") {
             paragraph "This integration uses the official Resideo/Honeywell API to control your T10 thermostats directly."
-            if (settings.clientId) {
-                paragraph "Using Client ID: ${settings.clientId}"
-            }
         }
     }
 }
 
 def credentialsPage() {
     dynamicPage(name: "credentialsPage", title: "Developer Credentials Setup", nextPage: "mainPage") {
-        section("Resideo API Credentials") {
+        section("How to Get Credentials") {
             paragraph """
             To use the Resideo API, you need developer credentials from Honeywell/Resideo.
             These are different from your regular Resideo account credentials.
             """
 
-            input "clientId", "text", title: "Client ID", description: "Your Resideo API Client ID", required: true
-            input "clientSecret", "password", title: "Client Secret", description: "Your Resideo API Client Secret", required: true
+            paragraph """
+            <div style='background-color:#e3f2fd; border:1px solid #1976d2; padding:15px; border-radius:5px; margin:10px 0;'>
+                <h3 style='color:#1976d2; margin-top:0;'>📋 Follow These Steps:</h3>
+                <ol style='margin:5px 0 0 20px; color:#333;'>
+                    <li><b>Go to</b> <a href="https://developer.honeywellhome.com" target="_blank">https://developer.honeywellhome.com</a></li>
+                    <li><b>Sign in</b> with your regular Resideo account</li>
+                    <li><b>Click</b> "My Apps" → "Create New App"</li>
+                    <li><b>Fill out the form:</b><br/>
+                        • App Name: "Hubitat Integration" (or whatever you prefer)</li>
+                    <li><b>Submit</b> and copy the Consumer Key and Consumer Secret below ⬇️</li>
+                </ol>
+            </div>
+            """
         }
 
-        section("How to Get Credentials") {
-            paragraph """
-            <b>Step 1:</b> Go to <a href="https://developer.honeywellhome.com" target="_blank">https://developer.honeywellhome.com</a><br/>
-            <b>Step 2:</b> Sign in with your regular Resideo account<br/>
-            <b>Step 3:</b> Click "My Apps" → "Create New App"<br/>
-            <b>Step 4:</b> Fill out the form:<br/>
-            • App Name: "Hubitat Integration" (or whatever you prefer)<br/>
-            <b>Step 5:</b> Submit and copy the Client ID and Client Secret below
-            """
+        section("Enter Your Credentials") {
+            paragraph "<b>Paste the credentials from your Resideo developer app:</b>"
+
+            input "clientId", "text", title: "Consumer Key", description: "Your Resideo API Consumer Key (from developer portal)", required: true
+            input "clientSecret", "password", title: "Consumer Secret", description: "Your Resideo API Consumer Secret (from developer portal)", required: true
         }
 
         // Show callback URL only after credentials are entered
@@ -139,16 +168,28 @@ def credentialsPage() {
                 paragraph "<pre style='background-color:#f5f5f5; padding:10px; border:1px solid #ccc; font-family:monospace; word-wrap:break-word;'>${callbackUrl}</pre>"
             }
         } else if (callbackUrl && callbackUrl.startsWith("ERROR")) {
-            section("⚠️ OAuth Setup Required") {
-                paragraph "<div style='color:red; font-weight:bold;'>OAuth is not enabled for this app!</div>"
+            section("🚨 OAUTH REQUIRED - ACTION NEEDED 🚨") {
                 paragraph """
-                <b>To enable OAuth:</b><br/>
-                1. Click "Done" to save this app<br/>
-                2. Find this app in your Apps list<br/>
-                3. Click the 3 dots (⋯) menu next to the app name<br/>
-                4. Select "OAuth" from the menu<br/>
-                5. Click "Enable OAuth in App"<br/>
-                6. Come back and the callback URL will appear here
+                <div style='background-color:#ffebee; border:3px solid #d32f2f; padding:15px; margin:10px 0; border-radius:5px;'>
+                    <h2 style='color:#d32f2f; margin-top:0; text-align:center;'>⚠️ OAUTH IS NOT ENABLED ⚠️</h2>
+                    <p style='color:#d32f2f; font-weight:bold; font-size:16px; text-align:center; margin-bottom:15px;'>
+                        You must enable OAuth before proceeding!
+                    </p>
+                    <div style='background-color:white; padding:10px; border-radius:3px; border:1px solid #d32f2f;'>
+                        <b style='color:#d32f2f;'>Required Steps:</b><br/>
+                        <ol style='color:#333; margin:5px 0 0 20px;'>
+                            <li><b>Go to "Apps Code"</b> section in Hubitat (main menu → Apps Code)</li>
+                            <li><b>Find this app</b> in your Apps Code list</li>
+                            <li><b>Click on the app name</b> to open it</li>
+                            <li><b>Look for the 3 dots (⋯)</b> next to the "Save" button at the top right</li>
+                            <li><b>Click the 3 dots (⋯)</b> to open the dropdown menu</li>
+                            <li><b>Select "OAuth"</b> from the dropdown menu</li>
+                            <li><b>Click "Enable OAuth in App"</b></li>
+                            <li><b>Click "Update"</b> to save the OAuth setting</li>
+                            <li><b>Return to this app's main page</b> - the callback URL will appear</li>
+                        </ol>
+                    </div>
+                </div>
                 """
             }
         }
@@ -156,7 +197,7 @@ def credentialsPage() {
         section("Important Notes") {
             paragraph """
             • Keep these credentials secure - they provide access to your thermostats<br/>
-            • The Client Secret will only be shown once on the developer portal<br/>
+            • The Consumer Secret will only be shown once on the developer portal<br/>
             • You can always regenerate credentials if needed
             """
         }
@@ -185,15 +226,35 @@ def oauthInitialize() {
         logDebug "Redirect URL: ${buildRedirectUrl()}"
 
         dynamicPage(name: "oauthInitialize", title: "Connect to Resideo API", nextPage: null, uninstall: false, install: false) {
-            section("Authorization") {
-                paragraph "Click the link below to authorize this app with your Resideo account:"
-                href url: authUrl, title: "Authorize with Resideo", external: true, description: "This will open Resideo's authorization page"
-                paragraph "Redirect URL being used: ${buildRedirectUrl()}"
-                paragraph "After authorizing, you will be redirected back to complete the setup."
+            section("⚠️ FIRST: Update Your Resideo Developer App") {
+                paragraph """
+                <div style='background-color:#e3f2fd; border:2px solid #1976d2; padding:15px; border-radius:5px; margin-bottom:15px;'>
+                    <h3 style='color:#1976d2; margin-top:0;'>📋 Required: Add Redirect URL to Your Resideo App</h3>
+                    <p style='margin:5px 0;'><b>Before clicking "Authorize" below, you MUST add this redirect URL to your Resideo developer app:</b></p>
+
+                    <div style='background-color:#f5f5f5; padding:10px; border-radius:3px; border:1px solid #ccc; margin:10px 0;'>
+                        <b>Redirect URL to copy:</b><br/>
+                        <code style='font-family:monospace; word-break:break-all;'>${buildRedirectUrl()}</code>
+                    </div>
+
+                    <p><b>How to add it:</b></p>
+                    <ol style='margin:5px 0 0 20px;'>
+                        <li>Go to <a href="https://developer.honeywellhome.com" target="_blank">https://developer.honeywellhome.com</a></li>
+                        <li>Sign in and find your app</li>
+                        <li>Click "Edit" on your app</li>
+                        <li>Find the "Redirect URIs" field</li>
+                        <li>Paste the redirect URL above</li>
+                        <li>Click "Save" or "Update"</li>
+                        <li>Come back here and click "Authorize" below</li>
+                    </ol>
+                </div>
+                """
             }
-            section("Debug") {
-                paragraph "Client ID: ${settings.clientId}"
-                paragraph "Full auth URL: ${authUrl}"
+
+            section("Authorization") {
+                paragraph "After adding the redirect URL above, click the link below to authorize:"
+                href url: authUrl, title: "Authorize with Resideo", external: true, description: "This will open Resideo's authorization page"
+                paragraph "After authorizing, you will be redirected back to complete the setup."
             }
         }
     } else {
@@ -227,47 +288,176 @@ def authPage() {
 
 def discoveryPage() {
     dynamicPage(name: "discoveryPage", title: "Thermostat Discovery", nextPage: "mainPage") {
-        section("Discovered Thermostats") {
-            if (!state.thermostats) {
-                discoverThermostats()
+        if (!state.thermostats) {
+            discoverThermostats()
+        }
+
+        if (state.thermostats) {
+            // Separate thermostats into installed vs available
+            def installedThermostats = []
+            def availableThermostats = []
+
+            state.thermostats.each { thermostat ->
+                def deviceExists = getChildDevice(thermostat.deviceID)
+                if (deviceExists) {
+                    installedThermostats.add(thermostat)
+                } else {
+                    availableThermostats.add(thermostat)
+                }
             }
 
-            if (state.thermostats) {
-                state.thermostats.each { thermostat ->
-                    def deviceId = thermostat.deviceID
-                    def name = thermostat.userDefinedDeviceName
-                    def temperature = thermostat.indoorTemperature
-                    def humidity = thermostat.indoorHumidity
-                    def mode = thermostat.changeableValues?.mode ?: "Unknown"
+            // Show installed thermostats
+            if (installedThermostats.size() > 0) {
+                section("✅ Installed Thermostats") {
+                    installedThermostats.each { thermostat ->
+                        def deviceId = thermostat.deviceID
+                        def name = thermostat.userDefinedDeviceName
+                        def temperature = thermostat.indoorTemperature
+                        def humidity = thermostat.indoorHumidity
+                        def mode = thermostat.changeableValues?.mode ?: "Unknown"
 
-                    def deviceExists = getChildDevice(deviceId)
+                        paragraph """
+                        <div style='background-color:#e8f5e8; border:2px solid #4caf50; padding:12px; border-radius:5px; margin:8px 0;'>
+                            <b>${name}</b> ✅<br/>
+                            Device ID: ${deviceId}<br/>
+                            Current: ${temperature}°F, ${humidity}% humidity<br/>
+                            Mode: ${mode}<br/>
+                            <b style='color:#2e7d32'>Status: ✅ Installed and Ready</b>
+                        </div>
+                        """
+                    }
+                }
+            }
 
+            // Show available thermostats for installation
+            if (availableThermostats.size() > 0) {
+                section("📥 Available Thermostats") {
+                    // Add "Install All" button if there are multiple thermostats
+                    if (availableThermostats.size() > 1) {
+                        input "installAll", "bool", title: "📥 Install All Available Thermostats", defaultValue: false, submitOnChange: true
+
+                        // Handle "Install All" button press
+                        if (installAll) {
+                            def allInstallations = []
+                            availableThermostats.each { thermostat ->
+                                def result = installThermostat(thermostat)
+                                if (result) {
+                                    allInstallations.add(thermostat.userDefinedDeviceName ?: "Thermostat ${thermostat.deviceID}")
+                                }
+                            }
+                            app.removeSetting("installAll")
+
+                            if (allInstallations.size() > 0) {
+                                section("🎉 Mass Installation Complete") {
+                                    paragraph """
+                                    <div style='background-color:#e8f5e8; border:2px solid #4caf50; padding:15px; border-radius:5px; margin:10px 0;'>
+                                        <h3 style='color:#2e7d32; margin-top:0;'>🎉 All Thermostats Successfully Installed!</h3>
+                                        <p style='color:#2e7d32; margin:5px 0;'><b>Installed ${allInstallations.size()} thermostat(s):</b></p>
+                                        <ul style='color:#2e7d32; margin:5px 0 0 20px;'>
+                                            ${allInstallations.collect { "<li><b>${it}</b></li>" }.join('')}
+                                        </ul>
+                                        <p style='color:#666; margin:10px 0 0 0; font-size:14px;'>
+                                            All your thermostats are now available in the Devices section and ready to use!
+                                        </p>
+                                        <p style='color:#666; margin:10px 0 0 0; font-size:14px;'>
+                                            <i>Page will refresh in a moment to update the thermostat list...</i>
+                                        </p>
+                                    </div>
+                                    <script>
+                                        setTimeout(function() {
+                                            window.location.reload();
+                                        }, 2000);
+                                    </script>
+                                    """
+                                }
+                            }
+                            return
+                        }
+                    }
+
+                    availableThermostats.each { thermostat ->
+                        def deviceId = thermostat.deviceID
+                        def name = thermostat.userDefinedDeviceName
+                        def temperature = thermostat.indoorTemperature
+                        def humidity = thermostat.indoorHumidity
+                        def mode = thermostat.changeableValues?.mode ?: "Unknown"
+
+                        paragraph """
+                        <div style='background-color:#f9f9f9; border:2px solid #ddd; padding:12px; border-radius:5px; margin:8px 0;'>
+                            <b>${name}</b><br/>
+                            Device ID: ${deviceId}<br/>
+                            Current: ${temperature}°F, ${humidity}% humidity<br/>
+                            Mode: ${mode}<br/>
+                            <b style='color:#666'>Status: ⚪ Available for Installation</b>
+                        </div>
+                        """
+
+                        input "install_${deviceId}", "bool", title: "📥 Install ${name}", defaultValue: false, submitOnChange: true
+                    }
+
+                    // Check for new individual installations
+                    def newInstallations = []
+                    availableThermostats.each { thermostat ->
+                        def deviceId = thermostat.deviceID
+                        if (settings["install_${deviceId}"]) {
+                            def result = installThermostat(thermostat)
+                            if (result) {
+                                newInstallations.add(thermostat.userDefinedDeviceName ?: "Thermostat ${deviceId}")
+                            }
+                            app.removeSetting("install_${deviceId}")
+                        }
+                    }
+
+                    // Show individual installation success feedback and redirect to refresh the page
+                    if (newInstallations.size() > 0) {
+                        section("✅ Installation Complete") {
+                            paragraph """
+                            <div style='background-color:#e8f5e8; border:2px solid #4caf50; padding:10px; border-radius:5px; margin:10px 0;'>
+                                <h3 style='color:#2e7d32; margin-top:0;'>🎉 Successfully Installed!</h3>
+                                <p style='color:#2e7d32; margin:5px 0;'><b>Installed thermostats:</b></p>
+                                <ul style='color:#2e7d32; margin:5px 0 0 20px;'>
+                                    ${newInstallations.collect { "<li><b>${it}</b></li>" }.join('')}
+                                </ul>
+                                <p style='color:#666; margin:10px 0 0 0; font-size:14px;'>
+                                    Your thermostats are now available in the Devices section and ready to use!
+                                </p>
+                                <p style='color:#666; margin:10px 0 0 0; font-size:14px;'>
+                                    <i>Page will refresh in a moment to update the thermostat list...</i>
+                                </p>
+                            </div>
+                            <script>
+                                setTimeout(function() {
+                                    window.location.reload();
+                                }, 2000);
+                            </script>
+                            """
+                        }
+                        return // Exit early to show only the success message and trigger refresh
+                    }
+                }
+            } else if (installedThermostats.size() > 0) {
+                section("📥 Available Thermostats") {
                     paragraph """
-                    <b>${name}</b><br/>
-                    Device ID: ${deviceId}<br/>
-                    Current: ${temperature}°F, ${humidity}% humidity<br/>
-                    Mode: ${mode}<br/>
-                    Status: ${deviceExists ? "✅ Installed" : "⚪ Not installed"}
+                    <div style='background-color:#e8f5e8; border:2px solid #4caf50; padding:15px; border-radius:5px; margin:10px 0;'>
+                        <h3 style='color:#2e7d32; margin-top:0;'>🎉 All Thermostats Installed!</h3>
+                        <p style='color:#2e7d32; margin:5px 0;'>
+                            All discovered thermostats have been successfully installed and are ready to use.
+                        </p>
+                        <p style='color:#666; margin:10px 0 0 0; font-size:14px;'>
+                            Your thermostats are available in the Devices section.
+                        </p>
+                    </div>
                     """
-
-                    if (!deviceExists) {
-                        input "install_${deviceId}", "bool", title: "Install ${name}", defaultValue: false, submitOnChange: true
-                    }
                 }
+            }
 
-                // Check for new installations
-                state.thermostats.each { thermostat ->
-                    def deviceId = thermostat.deviceID
-                    if (settings["install_${deviceId}"] && !getChildDevice(deviceId)) {
-                        installThermostat(thermostat)
-                        app.removeSetting("install_${deviceId}")
-                    }
-                }
-
-            } else {
+        } else {
+            section("Discovered Thermostats") {
                 paragraph "⚠️ No thermostats discovered. Check your API connection."
             }
+        }
 
+        section("Discovery Options") {
             input "rediscover", "bool", title: "Refresh Discovery", submitOnChange: true, defaultValue: false
             if (rediscover) {
                 state.remove("thermostats")
@@ -480,8 +670,11 @@ def installThermostat(thermostat) {
         // Initial update
         updateThermostat(childDevice, thermostat)
 
+        return true  // Installation successful
+
     } catch (Exception e) {
         log.error "Error installing thermostat ${name}: ${e.message}"
+        return false  // Installation failed
     }
 }
 
@@ -929,7 +1122,7 @@ def oauthCallback() {
             render contentType: "text/html", data: """
             <html>
             <body style="font-family: Arial; text-align: center; margin-top: 50px;">
-                <h2 style="color: green;">✅ Authorization Successful!</h2>
+                <h2 style="color: green;">Authorization Successful!</h2>
                 <p>Your Resideo thermostats are now connected to Hubitat.</p>
                 <p>You can close this window and return to your Hubitat app.</p>
                 <script>
