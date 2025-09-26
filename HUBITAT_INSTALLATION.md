@@ -63,9 +63,10 @@ This guide covers how to install and configure the Resideo Direct API integratio
 1. **Back to main app page**: You should see "✅ Connected to Resideo API"
 2. **Click**: **Discover Thermostats**
 3. **Wait for discovery**: The app will find all thermostats in your account
-4. **Install your thermostats**: For each one you want:
-   - Toggle **Install [Thermostat Name]** to **ON**
-   - The device will be created automatically
+4. **Install your thermostats**:
+   - **Install All**: Use the **Install All Thermostats** radio button at the top to install all at once
+   - **Or Individual**: Toggle each **Install [Thermostat Name]** to **ON** for specific thermostats
+   - Devices will be created automatically
 5. **Click**: **Done**
 
 **🎉 Setup Complete!** Your thermostats are now available as Hubitat devices.
