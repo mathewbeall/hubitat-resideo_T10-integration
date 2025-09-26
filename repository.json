@@ -1,0 +1,19 @@
+{
+    "author": "Mathew Beall",
+    "gitHubUrl": "https://github.com/mathewbeall/hubitat-resideo_T10-integration",
+    "packages": [
+        {
+            "name": "Hubitat Resideo T10 Integration",
+            "category": "Integrations",
+            "tags": [
+                "Cloud",
+                "HVAC",
+                "Thermostats",
+                "Resideo",
+                "Honeywell"
+            ],
+            "location": "https://raw.githubusercontent.com/mathewbeall/hubitat-resideo_T10-integration/main/packageManifest.json",
+            "description": "Complete Hubitat integration for Resideo T10 smart thermostats with OAuth authentication, real-time status updates, and full HVAC control including temperature setpoints, mode changes, and fan control."
+        }
+    ]
+}
