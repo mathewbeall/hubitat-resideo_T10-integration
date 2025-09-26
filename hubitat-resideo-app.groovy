@@ -149,8 +149,8 @@ def credentialsPage() {
         section("Enter Your Credentials") {
             paragraph "<b>Paste the credentials from your Resideo developer app:</b>"
 
-            input "clientId", "text", title: "Consumer Key", description: "Your Resideo API Consumer Key (from developer portal)", required: true
-            input "clientSecret", "password", title: "Consumer Secret", description: "Your Resideo API Consumer Secret (from developer portal)", required: true
+            input "clientId", "text", title: "Consumer Key", description: "Your Resideo API Consumer Key (from developer portal)", required: true, submitOnChange: true
+            input "clientSecret", "password", title: "Consumer Secret", description: "Your Resideo API Consumer Secret (from developer portal)", required: true, submitOnChange: true
         }
 
         // Show callback URL only after credentials are entered
