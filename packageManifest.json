@@ -1,0 +1,30 @@
+{
+    "packageName": "Hubitat Resideo T10 Integration",
+    "author": "Mathew Beall",
+    "version": "1.1.1",
+    "minimumHEVersion": "2.2.4",
+    "dateReleased": "2025-09-25",
+    "releaseNotes": "Complete Hubitat integration for Resideo T10 thermostats with OAuth authentication, real-time status updates, and full HVAC control",
+    "documentationLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration/blob/main/README.md",
+    "communityLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration",
+    "apps": [
+        {
+            "id": "resideo-direct-api-integration",
+            "name": "Resideo Direct API Integration",
+            "namespace": "mathewbeall",
+            "location": "https://raw.githubusercontent.com/mathewbeall/hubitat-resideo_T10-integration/main/hubitat-resideo-app.groovy",
+            "required": true,
+            "primary": true,
+            "oauth": true
+        }
+    ],
+    "drivers": [
+        {
+            "id": "resideo-t10-thermostat",
+            "name": "Resideo T10 Thermostat",
+            "namespace": "mathewbeall",
+            "location": "https://raw.githubusercontent.com/mathewbeall/hubitat-resideo_T10-integration/main/hubitat-resideo-driver.groovy",
+            "required": true
+        }
+    ]
+}
