@@ -63,6 +63,7 @@ metadata {
         // Custom commands
         command "setSchedule", [[name:"mode*", type:"ENUM", constraints:["hold","schedule"]]]
         command "refresh"
+
     }
 
     preferences {
@@ -82,7 +83,7 @@ def installed() {
 
     // Schedule auto refresh if enabled
     if (autoRefresh && autoRefresh > 0) {
-        schedule("0 */${autoRefresh} * * * ?", refresh)
+        schedule("0 */${autoRefresh} * * * ?", "refresh")
     }
 
     initialize()
@@ -96,7 +97,7 @@ def updated() {
 
     // Schedule auto refresh if enabled
     if (autoRefresh && autoRefresh > 0) {
-        schedule("0 */${autoRefresh} * * * ?", refresh)
+        schedule("0 */${autoRefresh} * * * ?", "refresh")
     }
 
     // Auto-disable debug logging after 30 minutes
