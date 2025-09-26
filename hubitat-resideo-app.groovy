@@ -122,6 +122,11 @@ def mainPage() {
 }
 
 def credentialsPage() {
+    // Reset the refresh button if it was clicked
+    if (settings.refreshCredentials) {
+        app.removeSetting("refreshCredentials")
+    }
+
     // Allow installation if credentials are provided
     def canInstall = (settings.clientId && settings.clientSecret)
     dynamicPage(name: "credentialsPage", title: "Developer Credentials Setup", nextPage: "mainPage", install: canInstall, uninstall: true) {
@@ -151,6 +156,11 @@ def credentialsPage() {
 
             input "clientId", "text", title: "Consumer Key", description: "Your Resideo API Consumer Key (from developer portal)", required: true, submitOnChange: true
             input "clientSecret", "password", title: "Consumer Secret", description: "Your Resideo API Consumer Secret (from developer portal)", required: true, submitOnChange: true
+
+            // Add refresh button for users who paste without triggering submitOnChange
+            if (settings.clientId || settings.clientSecret) {
+                input "refreshCredentials", "bool", title: "✅ Check Credentials & Show Save Options", submitOnChange: true, defaultValue: false, description: "Click this after pasting both credentials to refresh the page"
+            }
         }
 
         // Show callback URL only after credentials are entered
