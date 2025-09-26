@@ -38,9 +38,18 @@ This guide covers how to install and configure the Resideo Direct API integratio
    - **Consumer Secret**: Paste your Consumer Secret from the Resideo developer portal
 3. **Click**: **Done** to save your credentials
 
-### Step 3: Connect to Resideo API
+### Step 3: Configure Callback URL
 
 1. **Back in the app**: You should now see your credentials saved
+2. **Copy the Callback URL**: Copy the long callback URL displayed in the multi-line text box
+3. **Go to Resideo Developer Portal**: Visit [developer.honeywellhome.com](https://developer.honeywellhome.com)
+4. **Edit your app**: Find your developer app and click **Edit**
+5. **Paste Callback URL**: Paste the callback URL into the **Redirect URI** field
+6. **Save**: Click **Save** in the developer portal
+
+### Step 4: Connect to Resideo API
+
+1. **Back in Hubitat app**: Return to the Resideo app in Hubitat
 2. **Click**: **Connect to Resideo API**
 3. **Authorize**: You'll be taken to Resideo's official OAuth page
 4. **Log in**: Use your **regular Resideo account** (same as mobile app)
@@ -49,7 +58,7 @@ This guide covers how to install and configure the Resideo Direct API integratio
 
 **✅ That's it!** OAuth is handled entirely within Hubitat.
 
-### Step 4: Discover and Install Thermostats
+### Step 5: Discover and Install Thermostats
 
 1. **Back to main app page**: You should see "✅ Connected to Resideo API"
 2. **Click**: **Discover Thermostats**
