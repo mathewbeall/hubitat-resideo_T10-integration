@@ -130,8 +130,8 @@ Once setup is complete, you'll have full thermostat devices in Hubitat with:
 ### Fallback: Manual Token Entry
 If OAuth doesn't work:
 1. Use the **Manual Token Entry** option in the app
-2. Run the included `oauth_helper.py` script to get tokens
-3. Copy/paste tokens into the manual entry fields
+2. Follow the manual OAuth process using your web browser
+3. Copy/paste the access and refresh tokens into the manual entry fields
 
 ### Authentication Issues in Hubitat
 1. **"Not connected" after OAuth**: Check Hubitat logs for OAuth errors
@@ -187,14 +187,14 @@ If you have thermostats in multiple Resideo locations, they will all be discover
 ## Need Help?
 
 ### Quick Help
-- **Re-run OAuth setup**: `python3 oauth_helper.py`
+- **Re-run OAuth setup**: Use the "Refresh API Token" option in the app
 - **Test API connection**: Check app logs in Hubitat
-- **Start over**: Delete tokens and run setup again
+- **Start over**: Delete the app and re-install with fresh OAuth
 
 ### Common Issues
 | Problem | Solution |
 |---------|----------|
-| Tokens expired | Re-run `oauth_helper.py` |
+| Tokens expired | Use "Refresh API Token" in the app |
 | No thermostats found | Check Resideo mobile app |
 | Control not working | Verify thermostats online |
 | Setup failed | Use your regular Resideo account |
