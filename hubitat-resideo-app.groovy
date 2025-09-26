@@ -97,9 +97,7 @@ def mainPage() {
                     paragraph "Found ${state.thermostats.size()} thermostat(s)"
                 }
             }
-
         }
-
 
         section("Installed Devices") {
             def children = getChildDevices()
@@ -124,7 +122,9 @@ def mainPage() {
 }
 
 def credentialsPage() {
-    dynamicPage(name: "credentialsPage", title: "Developer Credentials Setup", nextPage: "mainPage") {
+    // Allow installation if credentials are provided
+    def canInstall = (settings.clientId && settings.clientSecret)
+    dynamicPage(name: "credentialsPage", title: "Developer Credentials Setup", nextPage: "mainPage", install: canInstall, uninstall: true) {
         section("How to Get Credentials") {
             paragraph """
             To use the Resideo API, you need developer credentials from Honeywell/Resideo.
@@ -190,6 +190,24 @@ def credentialsPage() {
                             <li><b>Return to this app's main page</b> - the callback URL will appear</li>
                         </ol>
                     </div>
+                </div>
+                """
+            }
+        }
+
+        // Show save instructions if credentials are entered
+        if (canInstall) {
+            section("✅ Credentials Configured - Next Steps") {
+                paragraph """
+                <div style='background-color:#e8f5e8; border:1px solid #4caf50; padding:15px; border-radius:5px; margin:10px 0;'>
+                    <h3 style='color:#4caf50; margin-top:0;'>🎉 Great! Your credentials are configured.</h3>
+                    <p style='color:#333; margin-bottom:10px;'><b>IMPORTANT:</b> Click "Done" to save the app now. This prevents losing your settings during OAuth setup.</p>
+                    <p style='color:#333; margin:5px 0;'><b>After saving:</b></p>
+                    <ol style='margin:5px 0 0 20px; color:#333;'>
+                        <li>The app will be installed and your credentials saved</li>
+                        <li>You can then return to configure OAuth authentication</li>
+                        <li>Complete the OAuth flow without losing your settings</li>
+                    </ol>
                 </div>
                 """
             }
@@ -714,7 +732,6 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
         return [success: false, error: "No access token"]
     }
 
-    // CRITICAL: Get FRESH thermostat data like Python does
     logDebug "Getting fresh thermostat data before sending command..."
 
     // First test if basic API access works
@@ -723,10 +740,7 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
         return [success: false, error: "API access failed"]
     }
 
-    discoverThermostats() // This refreshes state.thermostats
-
-    // CRITICAL: Based on timestamp analysis, need 500ms delay after discovery
-    // for API data to be properly available
+    discoverThermostats()
     pauseExecution(500)
 
     // Get the thermostat data to find location ID
@@ -769,14 +783,9 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
             // Update only the mode field
             requestBody.mode = parameters.mode.toString()
 
-            // CRITICAL: Do NOT modify heatCoolMode!
-            // The working Python script keeps heatCoolMode unchanged
-            // Only modify the primary 'mode' field
-
             // Keep thermostatSetpointStatus for LCC devices
             requestBody.thermostatSetpointStatus = "PermanentHold"
 
-            // CRITICAL: Ensure exact data types that work in Python
             // Force integers for temperature values
             if (requestBody.heatSetpoint != null) {
                 requestBody.heatSetpoint = Math.round(requestBody.heatSetpoint as Double) as Integer
@@ -808,10 +817,7 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
                 requestBody.nextPeriodTime = requestBody.nextPeriodTime.toString()
             }
 
-            // DO NOT remove any fields - API expects complete changeable values
-            // This includes potentially "conflicting" fields like heatCoolMode
-
-            logDebug "Using complete changeable values approach (like Python) for mode change to: ${parameters.mode}"
+            logDebug "Using complete changeable values approach for mode change to: ${parameters.mode}"
             logDebug "Final request body after type conversion: ${requestBody}"
             break
 
@@ -825,18 +831,12 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
     }
 
     logDebug "Request body: ${requestBody}"
-
-    // CRITICAL: This log.info is somehow essential for proper execution
     log.info "Request body: ${requestBody}"
 
-
-    // CRITICAL: Force proper JSON serialization by converting to JSON string
     def jsonBuilder = new JsonBuilder(requestBody)
     def jsonString = jsonBuilder.toString()
 
     logDebug "JSON string being sent: ${jsonString}"
-
-    // CRITICAL: This log.info is somehow essential for proper execution
     log.info "JSON being sent: ${jsonString}"
 
     def params = [

@@ -63,7 +63,6 @@ metadata {
         // Custom commands
         command "setSchedule", [[name:"mode*", type:"ENUM", constraints:["hold","schedule"]]]
         command "refresh"
-
     }
 
     preferences {
@@ -149,7 +148,6 @@ def updateThermostatData(thermostat) {
         // Changeable values (current settings)
         def changeableValues = thermostat.changeableValues
         if (changeableValues) {
-
             // HVAC Mode
             def hvacMode = convertResideoModeToHubitat(changeableValues.mode)
             sendEvent(name: "thermostatMode", value: hvacMode)
@@ -305,7 +303,6 @@ def fanCirculate() {
 }
 
 def emergencyHeat() {
-    // T10 doesn't support emergency heat, so just use heat mode
     setThermostatMode("heat")
     log.warn "${device.displayName} does not support emergency heat, using heat mode instead"
 }
@@ -317,10 +314,7 @@ def setSchedule(mode) {
 
     def setpointStatus = (mode == "schedule") ? "NoHold" : "PermanentHold"
 
-    // This would require getting current values and updating with new setpoint status
     log.info "${device.displayName} schedule mode requested: ${mode} (setpoint status: ${setpointStatus})"
-
-    // For now, just update the attribute
     sendEvent(name: "scheduleStatus", value: mode)
 }
 
@@ -395,9 +389,8 @@ private getCurrentSetpoint(mode, heatSetpoint, coolSetpoint) {
         case "cool":
             return coolSetpoint
         case "auto":
-            // For auto mode, return the average or the cooling setpoint
             if (heatSetpoint != null && coolSetpoint != null) {
-                return coolSetpoint // Hubitat typically uses cooling setpoint for auto mode
+                return coolSetpoint
             } else if (heatSetpoint != null) {
                 return heatSetpoint
             } else if (coolSetpoint != null) {
