@@ -97,6 +97,7 @@ def mainPage() {
                     paragraph "Found ${state.thermostats.size()} thermostat(s)"
                 }
             }
+
         }
 
 
@@ -466,6 +467,7 @@ def discoveryPage() {
         }
     }
 }
+
 
 def installed() {
     logDebug "Installed with settings: ${settings}"
@@ -932,6 +934,14 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
 }
 
 def sendFanCommand(deviceId, locationId, fanMode) {
+    // Use proper JSON serialization like working thermostat commands
+    def requestBody = [mode: fanMode]
+    def jsonBuilder = new JsonBuilder(requestBody)
+    def jsonString = jsonBuilder.toString()
+
+    logDebug "Fan request body: ${requestBody}"
+    logDebug "Fan JSON string being sent: ${jsonString}"
+
     def params = [
         uri: "https://api.honeywell.com/v2/devices/thermostats/${deviceId}/fan",
         query: [
@@ -940,9 +950,10 @@ def sendFanCommand(deviceId, locationId, fanMode) {
         ],
         headers: [
             'Authorization': "Bearer ${state.resideoAccessToken}",
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json; charset=utf-8'
         ],
-        body: [mode: fanMode]
+        body: jsonString,
+        requestContentType: 'application/json'
     ]
 
     try {
@@ -967,6 +978,189 @@ def sendFanCommand(deviceId, locationId, fanMode) {
     } catch (Exception e) {
         log.error "Error sending fan command: ${e.message}"
         return [success: false, error: e.message]
+    }
+}
+
+// ========== Priority Command Handlers ==========
+
+def sendPriorityCommand(deviceId, command, parameters = [:]) {
+    logDebug "Sending priority command: ${command} to device ${deviceId} with parameters: ${parameters}"
+
+    if (!state.resideoAccessToken) {
+        log.error "No access token available for priority command"
+        return [success: false, error: "No access token"]
+    }
+
+    // Find the thermostat to get locationId
+    def targetThermostat = null
+    state.thermostats?.each { thermostat ->
+        if (thermostat.deviceID == deviceId) {
+            targetThermostat = thermostat
+        }
+    }
+
+    if (!targetThermostat) {
+        log.error "Could not find thermostat with device ID: ${deviceId}"
+        return [success: false, error: "Device not found"]
+    }
+
+    def locationId = targetThermostat.locationID
+
+    switch (command) {
+        case "setPriority":
+            return setPrioritySettings(deviceId, locationId, parameters.priorityType, parameters.selectedRooms)
+
+        case "setSelectedRooms":
+            return setPrioritySettings(deviceId, locationId, parameters.priorityType, parameters.selectedRooms)
+
+        default:
+            log.error "Unknown priority command: ${command}"
+            return [success: false, error: "Unknown command"]
+    }
+}
+
+def getRoomPriorityData(deviceId) {
+    logDebug "Getting room priority data for device ${deviceId}"
+
+    if (!state.resideoAccessToken) {
+        log.error "No access token available for room data"
+        return [success: false, error: "No access token"]
+    }
+
+    // Find the thermostat to get locationId
+    def targetThermostat = null
+    state.thermostats?.each { thermostat ->
+        if (thermostat.deviceID == deviceId) {
+            targetThermostat = thermostat
+        }
+    }
+
+    if (!targetThermostat) {
+        log.error "Could not find thermostat with device ID: ${deviceId}"
+        return [success: false, error: "Device not found"]
+    }
+
+    def locationId = targetThermostat.locationID
+    def priorityData = getPrioritySettings(deviceId, locationId)
+
+    if (priorityData) {
+        return [success: true, data: priorityData]
+    } else {
+        return [success: false, error: "Failed to get priority data"]
+    }
+}
+
+// ========== Priority API Functions ==========
+
+def getPrioritySettings(deviceId, locationId) {
+    def params = [
+        uri: "https://api.honeywell.com/v2/devices/thermostats/${deviceId}/priority",
+        query: [
+            apikey: settings.clientId,
+            locationId: locationId
+        ],
+        headers: [
+            'Authorization': "Bearer ${state.resideoAccessToken}",
+            'Content-Type': 'application/json'
+        ]
+    ]
+
+    try {
+        def priorityData = null
+        httpGet(params) { response ->
+            if (response.status >= 200 && response.status < 300) {
+                priorityData = response.data
+            } else {
+                log.error "Get priority failed with status: ${response.status}"
+            }
+        }
+        return priorityData
+    } catch (Exception e) {
+        log.error "Error getting priority settings: ${e.message}"
+        return null
+    }
+}
+
+def setPrioritySettings(deviceId, locationId, priorityType, selectedRooms = null) {
+    def prioritySetting = [priorityType: priorityType]
+
+    if (priorityType == 'PickARoom' && selectedRooms) {
+        prioritySetting.selectedRooms = selectedRooms
+    }
+
+    // Pre-serialize the JSON body like the working thermostat command
+    def requestBody = [currentPriority: prioritySetting]
+    def jsonBuilder = new JsonBuilder(requestBody)
+    def jsonString = jsonBuilder.toString()
+
+    logDebug "Priority API request body: ${requestBody}"
+    logDebug "Priority JSON string being sent: ${jsonString}"
+
+    def params = [
+        uri: "https://api.honeywell.com/v2/devices/thermostats/${deviceId}/priority",
+        query: [
+            apikey: settings.clientId,
+            locationId: locationId
+        ],
+        headers: [
+            'Authorization': "Bearer ${state.resideoAccessToken}",
+            'Content-Type': 'application/json; charset=utf-8'
+        ],
+        body: jsonString,
+        requestContentType: 'application/json'
+    ]
+
+    try {
+        def prioritySuccess = false
+        def priorityError = null
+        httpPut(params) { response ->
+            if (response.status >= 200 && response.status < 300) {
+                log.info "Priority setting successful: ${priorityType}"
+                runIn(2, updateAllDevices)
+                prioritySuccess = true
+            } else {
+                log.error "Priority setting failed with status: ${response.status}"
+                priorityError = "HTTP ${response.status}"
+            }
+        }
+
+        if (prioritySuccess) {
+            return [success: true]
+        } else {
+            return [success: false, error: priorityError ?: "Priority setting failed"]
+        }
+    } catch (Exception e) {
+        log.error "Error setting priority: ${e.message}"
+        return [success: false, error: e.message]
+    }
+}
+
+def getRoomData(deviceId, locationId, groupId = 0) {
+    def params = [
+        uri: "https://api.honeywell.com/v2/devices/thermostats/${deviceId}/group/${groupId}/rooms",
+        query: [
+            apikey: settings.clientId,
+            locationId: locationId
+        ],
+        headers: [
+            'Authorization': "Bearer ${state.resideoAccessToken}",
+            'Content-Type': 'application/json'
+        ]
+    ]
+
+    try {
+        def roomData = null
+        httpGet(params) { response ->
+            if (response.status >= 200 && response.status < 300) {
+                roomData = response.data
+            } else {
+                log.error "Get rooms failed with status: ${response.status}"
+            }
+        }
+        return roomData
+    } catch (Exception e) {
+        log.error "Error getting room data: ${e.message}"
+        return null
     }
 }
 
