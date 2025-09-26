@@ -53,9 +53,7 @@ def mainPage() {
             // Check if OAuth is actually enabled by trying to create access token
             def oauthEnabled = true
             try {
-                if (!state.accessToken) {
-                    createAccessToken()
-                }
+                ensureAccessToken()
             } catch (Exception e) {
                 oauthEnabled = false
             }
@@ -167,9 +165,7 @@ def credentialsPage() {
         def callbackUrl = null
         if (clientId && clientSecret) {
             // Ensure we have an access token for the callback URL
-            if (!state.accessToken) {
-                createAccessToken()
-            }
+            ensureAccessToken()
             callbackUrl = buildRedirectUrl()
         }
 
@@ -501,7 +497,7 @@ def discoveryPage() {
 
 def installed() {
     logDebug "Installed with settings: ${settings}"
-    createAccessToken()
+    ensureAccessToken()
     initialize()
 }
 
@@ -1266,10 +1262,7 @@ private logInfo(msg) {
 
 // ========== OAuth2 Functions ==========
 
-def buildRedirectUrl() {
-    logDebug "buildRedirectUrl called - checking access token"
-    logDebug "Current state.accessToken: ${state.accessToken}"
-
+def ensureAccessToken() {
     if (!state.accessToken) {
         try {
             logDebug "Creating new access token..."
@@ -1277,9 +1270,22 @@ def buildRedirectUrl() {
             logDebug "Created access token: ${state.accessToken}"
         } catch (Exception e) {
             log.error "Failed to create access token: ${e.message}"
-            log.error "Exception details: ${e}"
-            return "ERROR: Could not create access token - OAuth may not be enabled. Exception: ${e.message}"
+            throw e
         }
+    } else {
+        logDebug "Using existing access token: ${state.accessToken}"
+    }
+}
+
+def buildRedirectUrl() {
+    logDebug "buildRedirectUrl called - checking access token"
+    logDebug "Current state.accessToken: ${state.accessToken}"
+
+    try {
+        ensureAccessToken()
+    } catch (Exception e) {
+        log.error "Exception details: ${e}"
+        return "ERROR: Could not create access token - OAuth may not be enabled. Exception: ${e.message}"
     }
 
     def fullUrl = getFullApiServerUrl()
