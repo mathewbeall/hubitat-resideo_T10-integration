@@ -176,7 +176,9 @@ def credentialsPage() {
         if (callbackUrl && !callbackUrl.startsWith("ERROR")) {
             section("📋 Callback URL (Copy This to Resideo Developer Portal)") {
                 paragraph "<b>Copy and paste this URL exactly:</b>"
-                paragraph "<pre style='background-color:#f5f5f5; padding:10px; border:1px solid #ccc; font-family:monospace; word-wrap:break-word;'>${callbackUrl}</pre>"
+                input "callbackUrlDisplay", "textarea", title: "Callback URL (Select All & Copy)",
+                    description: "Triple-click to select all, then copy this URL to your Resideo developer portal",
+                    defaultValue: callbackUrl
             }
         } else if (callbackUrl && callbackUrl.startsWith("ERROR")) {
             section("🚨 OAUTH REQUIRED - ACTION NEEDED 🚨") {
