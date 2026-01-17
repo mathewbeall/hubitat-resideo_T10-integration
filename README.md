@@ -68,7 +68,7 @@ The integration provides these device attributes:
 |-----------|-------------|---------|
 | `temperature` | Current room temperature | `72°F` |
 | `humidity` | Current humidity level | `45%` |
-| `thermostatMode` | Current HVAC mode | `cool`, `emergency heat` |
+| `thermostatMode` | Current HVAC mode | `heat` |
 | `thermostatFanMode` | Current fan setting | `auto` |
 | `heatingSetpoint` | Heating target temperature | `68°F` |
 | `coolingSetpoint` | Cooling target temperature | `74°F` |
