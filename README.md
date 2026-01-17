@@ -41,7 +41,8 @@ hubitat-resideo-T10-integration/
 
 ### Complete Thermostat Control
 - ✅ **Temperature Setpoints** - Set heating and cooling targets
-- ✅ **HVAC Modes** - Heat, Cool, Auto, Off
+- ✅ **HVAC Modes** - Heat, Cool, Auto, Off, Emergency Heat
+- ✅ **Emergency Heat** - Activate auxiliary/backup heating for heat pump systems
 - ✅ **Fan Control** - Auto, On, Circulate
 - ✅ **Real-time Status** - Current temperature, humidity, operating state
 - ✅ **Schedule Override** - Hold temperatures or follow schedule
@@ -67,7 +68,7 @@ The integration provides these device attributes:
 |-----------|-------------|---------|
 | `temperature` | Current room temperature | `72°F` |
 | `humidity` | Current humidity level | `45%` |
-| `thermostatMode` | Current HVAC mode | `cool` |
+| `thermostatMode` | Current HVAC mode | `cool`, `emergency heat` |
 | `thermostatFanMode` | Current fan setting | `auto` |
 | `heatingSetpoint` | Heating target temperature | `68°F` |
 | `coolingSetpoint` | Cooling target temperature | `74°F` |
@@ -84,8 +85,9 @@ Use these commands in rules, dashboards, or device pages:
 - `setCoolingSetpoint(74)` - Set cooling target
 
 ### Mode Control
-- `setThermostatMode("cool")` - Set HVAC mode
+- `setThermostatMode("cool")` - Set HVAC mode (heat, cool, auto, off, emergency heat)
 - `heat()`, `cool()`, `auto()`, `off()` - Quick mode buttons
+- `emergencyHeat()` - Activate emergency/auxiliary heat (for heat pump systems)
 
 ### Fan Control
 - `setThermostatFanMode("on")` - Set fan mode
@@ -182,6 +184,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.2.0** - Added emergency heat support for heat pump systems
 - **v1.1.1** - Bug fixes and interface cleanup
 - **v1.1.0** - Major UX improvements and workflow enhancements
 - **v1.0.0** - Initial release with full thermostat control
