@@ -39,10 +39,32 @@ How to use your Resideo T10 thermostats through Hubitat after installation.
 - **Cool**: Only cooling available
 - **Auto**: Automatic heating/cooling based on setpoints
 - **Off**: HVAC system turned off (fan may still run)
+- **Emergency Heat**: Activates auxiliary/backup heating (heat pump systems only)
 
 **Quick Commands**:
 - Use individual mode buttons on device page
 - Or use the main mode dropdown selector
+- Use `emergencyHeat()` command for emergency/auxiliary heat
+
+### Emergency Heat (Heat Pump Systems)
+
+**What is Emergency Heat?**
+Emergency heat bypasses the heat pump and uses only the auxiliary heating elements (electric resistance or gas backup). Use this when:
+- Outdoor temperature is extremely low (below heat pump efficiency range)
+- Heat pump is malfunctioning
+- Faster heating is needed in very cold conditions
+
+**How to Activate**:
+- **Device Page**: Click `emergencyHeat` command button
+- **Dashboard**: Set mode to "emergency heat"
+- **Rule Machine**: Use `setThermostatMode("emergency heat")` or `emergencyHeat()` command
+- **Voice**: "Alexa, set thermostat to emergency heat"
+
+**Important Notes**:
+- Emergency heat uses more energy than normal heat pump operation
+- Only available on systems with auxiliary heating
+- Mode will show as "emergency heat" when active
+- Switch to regular "heat" mode when conditions allow
 
 ## Advanced Features
 
@@ -154,6 +176,7 @@ ELSE Set Thermostat Mode: Cool
 - "Alexa, turn on the air conditioning"
 - "Alexa, what's the temperature in the living room?"
 - "Alexa, turn off the thermostat"
+- "Alexa, set thermostat to emergency heat"
 
 ### Google Assistant
 
