@@ -783,6 +783,39 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
             requestBody.thermostatSetpointStatus = "PermanentHold"
             break
 
+        case "setEmergencyHeat":
+            // Emergency heat: set mode to Heat AND add EmergencyHeatActive flag
+            requestBody = currentValues?.clone() ?: [:]
+            requestBody.mode = "Heat"  // Emergency heat uses Heat mode
+            requestBody.thermostatSetpointStatus = "PermanentHold"
+
+            // Add the EmergencyHeatActive flag only when enabling
+            // Per API docs: "Do not send if Emergency Heat is false"
+            if (parameters.emergencyHeatActive) {
+                requestBody.EmergencyHeatActive = true
+            }
+
+            // Force integers for temperature values
+            if (requestBody.heatSetpoint != null) {
+                requestBody.heatSetpoint = Math.round(requestBody.heatSetpoint as Double) as Integer
+            }
+            if (requestBody.coolSetpoint != null) {
+                requestBody.coolSetpoint = Math.round(requestBody.coolSetpoint as Double) as Integer
+            }
+            if (requestBody.endHeatSetpoint != null) {
+                requestBody.endHeatSetpoint = Math.round(requestBody.endHeatSetpoint as Double) as Integer
+            }
+            if (requestBody.endCoolSetpoint != null) {
+                requestBody.endCoolSetpoint = Math.round(requestBody.endCoolSetpoint as Double) as Integer
+            }
+            // Force boolean for boolean values
+            if (requestBody.autoChangeoverActive != null) {
+                requestBody.autoChangeoverActive = (requestBody.autoChangeoverActive == true || requestBody.autoChangeoverActive == 'true')
+            }
+
+            logDebug "Setting emergency heat mode with body: ${requestBody}"
+            break
+
         case "setMode":
             // CRITICAL: Must send ALL changeable values (like working Python script)
             // Get complete current changeable values and modify only the mode
@@ -793,6 +826,11 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
 
             // Keep thermostatSetpointStatus for LCC devices
             requestBody.thermostatSetpointStatus = "PermanentHold"
+
+            // When switching modes, ensure EmergencyHeatActive is NOT included
+            // Per API docs: omit the field entirely to disable emergency heat
+            requestBody.remove('EmergencyHeatActive')
+            requestBody.remove('emergencyHeatActive')
 
             // Force integers for temperature values
             if (requestBody.heatSetpoint != null) {
