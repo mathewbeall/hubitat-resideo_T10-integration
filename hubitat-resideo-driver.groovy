@@ -49,7 +49,7 @@ metadata {
         // Commands
         command "setHeatingSetpoint", [[name:"temperature*", type:"NUMBER", description:"Heating setpoint temperature"]]
         command "setCoolingSetpoint", [[name:"temperature*", type:"NUMBER", description:"Cooling setpoint temperature"]]
-        command "setThermostatMode", [[name:"mode*", type:"ENUM", constraints:["heat","cool","auto","off"]]]
+        command "setThermostatMode", [[name:"mode*", type:"ENUM", constraints:["heat","cool","auto","off","emergency heat"]]]
         command "setThermostatFanMode", [[name:"fanMode*", type:"ENUM", constraints:["auto","on","circulate"]]]
         command "heat"
         command "cool"
@@ -77,7 +77,7 @@ def installed() {
     if (debugOutput) log.debug "Installing Resideo Direct Thermostat: ${device.displayName}"
 
     // Set initial values
-    sendEvent(name: "supportedThermostatModes", value: ["heat", "cool", "auto", "off"])
+    sendEvent(name: "supportedThermostatModes", value: ["heat", "cool", "auto", "off", "emergency heat"])
     sendEvent(name: "supportedThermostatFanModes", value: ["auto", "on", "circulate"])
 
     // Schedule auto refresh if enabled
@@ -148,8 +148,9 @@ def updateThermostatData(thermostat) {
         // Changeable values (current settings)
         def changeableValues = thermostat.changeableValues
         if (changeableValues) {
-            // HVAC Mode
-            def hvacMode = convertResideoModeToHubitat(changeableValues.mode)
+            // HVAC Mode - check for emergency heat active flag
+            def emergencyHeatActive = changeableValues.emergencyHeatActive ?: false
+            def hvacMode = convertResideoModeToHubitat(changeableValues.mode, emergencyHeatActive)
             sendEvent(name: "thermostatMode", value: hvacMode)
             if (descTextEnable) log.info "${device.displayName} thermostat mode is ${hvacMode}"
 
@@ -240,6 +241,12 @@ def setCoolingSetpoint(temperature) {
 def setThermostatMode(mode) {
     if (debugOutput) log.debug "Setting thermostat mode to ${mode}"
 
+    // Handle emergency heat specially - route to emergencyHeat() command
+    if (mode?.toLowerCase() == "emergency heat") {
+        emergencyHeat()
+        return
+    }
+
     def resideoMode = convertHubitatModeToResideo(mode)
 
     def result = parent.sendThermostatCommand(device.deviceNetworkId, "setMode", [
@@ -303,8 +310,18 @@ def fanCirculate() {
 }
 
 def emergencyHeat() {
-    setThermostatMode("heat")
-    log.warn "${device.displayName} does not support emergency heat, using heat mode instead"
+    if (debugOutput) log.debug "Setting emergency heat mode"
+
+    def result = parent.sendThermostatCommand(device.deviceNetworkId, "setEmergencyHeat", [
+        emergencyHeatActive: true
+    ])
+
+    if (result && result.success) {
+        sendEvent(name: "thermostatMode", value: "emergency heat")
+        if (descTextEnable) log.info "${device.displayName} thermostat mode set to emergency heat"
+    } else {
+        log.error "Failed to set emergency heat mode: ${result ? result.error : 'No response from app'}"
+    }
 }
 
 // ========== Custom Commands ==========
@@ -320,7 +337,12 @@ def setSchedule(mode) {
 
 // ========== Helper Functions ==========
 
-private convertResideoModeToHubitat(resideoMode) {
+private convertResideoModeToHubitat(resideoMode, emergencyHeatActive = false) {
+    // Check for emergency heat first - it's a flag on top of heat mode
+    if (emergencyHeatActive) {
+        return "emergency heat"
+    }
+
     switch (resideoMode?.toLowerCase()) {
         case "heat": return "heat"
         case "cool": return "cool"
