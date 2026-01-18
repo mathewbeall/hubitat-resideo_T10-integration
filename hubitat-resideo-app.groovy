@@ -741,6 +741,15 @@ def executeRefresh() {
 }
 
 def updateAllDevices() {
+    // Prevent duplicate refreshes within 5 seconds (Issue #10)
+    // This can happen when scheduled refresh and driver refresh overlap
+    def timeSinceLastRefresh = state.lastRefresh ? (now() - state.lastRefresh) : Long.MAX_VALUE
+    if (timeSinceLastRefresh < 5000) {
+        logDebug "Skipping duplicate refresh - last refresh was ${timeSinceLastRefresh}ms ago"
+        state.refreshPending = false
+        return
+    }
+
     if (debugOutput) logDebug "Updating all thermostat devices"
 
     discoverThermostats() // Refresh data from API
