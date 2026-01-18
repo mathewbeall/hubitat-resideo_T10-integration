@@ -61,7 +61,7 @@ metadata {
         command "emergencyHeat"
 
         // Custom commands
-        command "setSchedule", [[name:"mode*", type:"ENUM", constraints:["hold","schedule"]]]
+        command "setScheduleMode", [[name:"mode*", type:"ENUM", constraints:["hold","schedule"]]]
         command "refresh"
     }
 
@@ -336,7 +336,7 @@ def emergencyHeat() {
 
 // ========== Custom Commands ==========
 
-def setSchedule(mode) {
+def setScheduleMode(mode) {
     if (debugOutput) log.debug "Setting schedule mode to ${mode}"
 
     def setpointStatus = (mode == "schedule") ? "NoHold" : "PermanentHold"

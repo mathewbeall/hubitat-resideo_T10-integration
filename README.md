@@ -184,6 +184,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.2.8** - Fix schedule conflict - rename setSchedule command to setScheduleMode
 - **v1.2.7** - Move supported modes init to initialize() to avoid Groovy issues
 - **v1.2.6** - Fix emergency heat - use mode='EmergencyHeat' instead of flag approach
 - **v1.2.5** - Fix Groovy method resolution by reordering updated() operations
