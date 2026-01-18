@@ -967,6 +967,14 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
 
                 if (!emergencyHeatActive) {
                     log.error "Emergency heat not supported by this thermostat - system does not have auxiliary/backup heating"
+
+                    // Restore previous mode since emergency heat isn't supported
+                    def previousMode = currentValues?.mode ?: "Off"
+                    log.warn "Restoring previous mode: ${previousMode}"
+
+                    // Send command to restore previous mode
+                    sendThermostatCommand(deviceId, "setMode", [mode: previousMode])
+
                     return [success: false, error: "Emergency heat not supported by this thermostat"]
                 }
             }
