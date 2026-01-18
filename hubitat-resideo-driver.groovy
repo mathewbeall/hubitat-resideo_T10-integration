@@ -91,10 +91,6 @@ def installed() {
 def updated() {
     if (debugOutput) log.debug "Updated Resideo Direct Thermostat: ${device.displayName}"
 
-    // Ensure supported modes are set (for devices installed before this was added)
-    sendEvent(name: "supportedThermostatModes", value: ["heat", "cool", "auto", "off", "emergency heat"])
-    sendEvent(name: "supportedThermostatFanModes", value: ["auto", "on", "circulate"])
-
     // Unschedule existing jobs
     unschedule()
 
@@ -107,6 +103,10 @@ def updated() {
     if (debugOutput) {
         runIn(1800, logsOff)
     }
+
+    // Ensure supported modes are set (for devices installed before this was added)
+    sendEvent(name: "supportedThermostatModes", value: ["heat", "cool", "auto", "off", "emergency heat"])
+    sendEvent(name: "supportedThermostatFanModes", value: ["auto", "on", "circulate"])
 
     initialize()
 }

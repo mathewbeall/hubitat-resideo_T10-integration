@@ -1,10 +1,10 @@
 {
     "packageName": "Hubitat Resideo T10 Integration",
     "author": "Mathew Beall",
-    "version": "1.2.4",
+    "version": "1.2.5",
     "minimumHEVersion": "2.2.4",
     "dateReleased": "2026-01-17",
-    "releaseNotes": "Fix Groovy scoping error in supported modes initialization",
+    "releaseNotes": "Fix Groovy method resolution by reordering updated() operations",
     "documentationLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration/blob/main/README.md",
     "communityLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration",
     "apps": [
