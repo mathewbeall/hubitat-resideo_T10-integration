@@ -1,10 +1,10 @@
 {
     "packageName": "Hubitat Resideo T10 Integration",
     "author": "Mathew Beall",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "minimumHEVersion": "2.2.4",
-    "dateReleased": "2025-09-25",
-    "releaseNotes": "Complete Hubitat integration for Resideo T10 thermostats with OAuth authentication, real-time status updates, and full HVAC control",
+    "dateReleased": "2026-01-17",
+    "releaseNotes": "Added emergency heat support for heat pump systems - new emergencyHeat() command and 'emergency heat' mode option",
     "documentationLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration/blob/main/README.md",
     "communityLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration",
     "apps": [
