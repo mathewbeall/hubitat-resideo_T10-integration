@@ -47,6 +47,38 @@ Task tool with subagent_type='Explore'
 - Understanding existing patterns
 - Researching how features work
 
+## Git Branching Workflow
+
+**IMPORTANT: Always use feature branches for issues/features:**
+
+### 1. Create Feature Branch
+Before starting work on an issue, create a branch:
+```bash
+git checkout -b feature/issue-<number>-<short-description>
+# Example: git checkout -b feature/issue-5-celsius-mode
+```
+
+### 2. Do All Work on the Branch
+- Make commits to the feature branch
+- Keep main clean and stable
+
+### 3. Push and Create PR (When Ready for Review)
+```bash
+git push -u origin feature/issue-<number>-<short-description>
+gh pr create --title "Issue #<number>: <description>" --body "..."
+```
+
+### 4. Merge to Main (After Testing/Approval)
+- Merge PR via GitHub or locally
+- Update version files (packageManifest.json, README.md) during merge
+- Delete the feature branch after merge
+
+**Benefits:**
+- Main stays stable for HPM users
+- Easy rollback if something breaks
+- Clear history of what changed for each issue
+- Enables parallel work on multiple features
+
 ## Key Files
 
 ### Groovy (Hubitat)
