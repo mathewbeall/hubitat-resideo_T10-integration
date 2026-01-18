@@ -184,6 +184,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.2.6** - Fix emergency heat - use mode='EmergencyHeat' instead of flag approach
 - **v1.2.5** - Fix Groovy method resolution by reordering updated() operations
 - **v1.2.4** - Fix Groovy scoping error in supported modes initialization
 - **v1.2.3** - Fix supported thermostat modes not populating for existing devices

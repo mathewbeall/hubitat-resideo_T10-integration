@@ -784,16 +784,15 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
             break
 
         case "setEmergencyHeat":
-            // Emergency heat: set mode to Heat AND add EmergencyHeatActive flag
+            // Emergency heat: use mode "EmergencyHeat" (not Heat + flag)
+            // The API returns mode="Heat" with emergencyHeatActive=true when successful
             requestBody = currentValues?.clone() ?: [:]
-            requestBody.mode = "Heat"  // Emergency heat uses Heat mode
+            requestBody.mode = "EmergencyHeat"  // Send EmergencyHeat as the mode value
             requestBody.thermostatSetpointStatus = "PermanentHold"
 
-            // Add the EmergencyHeatActive flag only when enabling
-            // Per API docs: "Do not send if Emergency Heat is false"
-            if (parameters.emergencyHeatActive) {
-                requestBody.EmergencyHeatActive = true
-            }
+            // Remove any emergencyHeatActive flags - they're not needed with mode approach
+            requestBody.remove('EmergencyHeatActive')
+            requestBody.remove('emergencyHeatActive')
 
             // Force integers for temperature values
             if (requestBody.heatSetpoint != null) {
