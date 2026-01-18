@@ -196,6 +196,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.4.4** - Use BigDecimal to force Celsius decimal display (17.0 not 17)
 - **v1.4.3** - Celsius always shows decimal (17.0, 17.5), Fahrenheit shows integer (66)
 - **v1.4.2** - Fix Fahrenheit temperatures showing .0 decimal
 - **v1.4.1** - Fix Celsius unit display showing F instead of C

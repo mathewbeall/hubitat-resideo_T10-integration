@@ -1,10 +1,10 @@
 {
     "packageName": "Hubitat Resideo T10 Integration",
     "author": "Mathew Beall",
-    "version": "1.4.3",
+    "version": "1.4.4",
     "minimumHEVersion": "2.2.4",
     "dateReleased": "2026-01-18",
-    "releaseNotes": "Celsius always shows decimal (17.0, 17.5), Fahrenheit shows integer (66)",
+    "releaseNotes": "Use BigDecimal to force Celsius decimal display (17.0 not 17)",
     "documentationLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration/blob/main/README.md",
     "communityLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration",
     "apps": [

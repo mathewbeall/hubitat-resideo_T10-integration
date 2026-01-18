@@ -525,8 +525,9 @@ private getNativeUnit() {
 private formatTemperature(value, unit) {
     if (value == null) return null
     if (unit == "C") {
-        // Divide by 2.0 to ensure decimal result (17.0, 17.5, etc.)
-        return Math.round(value * 2) / 2.0
+        // Round to 0.5 and use BigDecimal with scale 1 to always show one decimal
+        def rounded = Math.round(value * 2) / 2.0
+        return new BigDecimal(rounded).setScale(1, BigDecimal.ROUND_HALF_UP)
     } else {
         return Math.round(value) as Integer
     }
