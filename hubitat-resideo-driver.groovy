@@ -104,14 +104,14 @@ def updated() {
         runIn(1800, logsOff)
     }
 
-    // Ensure supported modes are set (for devices installed before this was added)
-    sendEvent(name: "supportedThermostatModes", value: ["heat", "cool", "auto", "off", "emergency heat"])
-    sendEvent(name: "supportedThermostatFanModes", value: ["auto", "on", "circulate"])
-
     initialize()
 }
 
 def initialize() {
+    // Ensure supported modes are set (for devices installed before this was added)
+    sendEvent(name: "supportedThermostatModes", value: ["heat", "cool", "auto", "off", "emergency heat"])
+    sendEvent(name: "supportedThermostatFanModes", value: ["auto", "on", "circulate"])
+
     // Initial refresh
     refresh()
 }

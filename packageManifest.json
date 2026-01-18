@@ -1,10 +1,10 @@
 {
     "packageName": "Hubitat Resideo T10 Integration",
     "author": "Mathew Beall",
-    "version": "1.2.6",
+    "version": "1.2.7",
     "minimumHEVersion": "2.2.4",
     "dateReleased": "2026-01-17",
-    "releaseNotes": "Fix emergency heat - use mode='EmergencyHeat' instead of flag approach",
+    "releaseNotes": "Move supported modes init to initialize() to avoid Groovy issues",
     "documentationLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration/blob/main/README.md",
     "communityLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration",
     "apps": [
