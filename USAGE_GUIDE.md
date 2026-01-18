@@ -65,6 +65,7 @@ Emergency heat bypasses the heat pump and uses only the auxiliary heating elemen
 - Only available on systems with auxiliary heating
 - Mode will show as "emergency heat" when active
 - Switch to regular "heat" mode when conditions allow
+- If your thermostat doesn't support emergency heat (no heat pump with auxiliary heating), the command will fail with an error and restore your previous mode
 
 ## Advanced Features
 
