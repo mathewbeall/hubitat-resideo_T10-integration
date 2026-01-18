@@ -320,7 +320,13 @@ def emergencyHeat() {
         sendEvent(name: "thermostatMode", value: "emergency heat")
         if (descTextEnable) log.info "${device.displayName} thermostat mode set to emergency heat"
     } else {
-        log.error "Failed to set emergency heat mode: ${result ? result.error : 'No response from app'}"
+        def errorMsg = result?.error ?: 'No response from app'
+        log.error "Failed to set emergency heat mode: ${errorMsg}"
+
+        // Provide user-friendly warning for unsupported systems
+        if (errorMsg.contains("not supported")) {
+            log.warn "${device.displayName} does not support emergency heat - this feature requires a heat pump system with auxiliary/backup heating"
+        }
     }
 }
 

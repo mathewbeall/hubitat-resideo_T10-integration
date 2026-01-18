@@ -957,6 +957,19 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
 
         // Return based on success flag set in closure
         if (commandSuccess) {
+            // For emergency heat, verify it was actually activated
+            if (command == "setEmergencyHeat") {
+                pauseExecution(1000)  // Wait for thermostat to update
+                discoverThermostats()  // Refresh data
+
+                def updatedThermostat = state.thermostats?.find { it.deviceID == deviceId }
+                def emergencyHeatActive = updatedThermostat?.changeableValues?.emergencyHeatActive ?: false
+
+                if (!emergencyHeatActive) {
+                    log.error "Emergency heat not supported by this thermostat - system does not have auxiliary/backup heating"
+                    return [success: false, error: "Emergency heat not supported by this thermostat"]
+                }
+            }
             return [success: true]
         } else {
             return [success: false, error: "Command failed"]
