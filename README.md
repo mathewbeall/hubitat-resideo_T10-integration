@@ -184,6 +184,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.3.0** - Dynamic capability detection - supportedThermostatModes now reflects actual thermostat capabilities (emergency heat only shown for thermostats that support it)
 - **v1.2.9** - Fix supported modes - use JSON format for JSON_OBJECT attributes
 - **v1.2.8** - Fix schedule conflict - rename setSchedule command to setScheduleMode
 - **v1.2.7** - Move supported modes init to initialize() to avoid Groovy issues

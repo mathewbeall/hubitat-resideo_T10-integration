@@ -77,7 +77,8 @@ def installed() {
     if (debugOutput) log.debug "Installing Resideo Direct Thermostat: ${device.displayName}"
 
     // Set initial values - use JSON string format for JSON_OBJECT attributes
-    sendEvent(name: "supportedThermostatModes", value: groovy.json.JsonOutput.toJson(["heat", "cool", "auto", "off", "emergency heat"]))
+    // Base modes only - emergency heat will be added dynamically based on API response
+    sendEvent(name: "supportedThermostatModes", value: groovy.json.JsonOutput.toJson(["heat", "cool", "auto", "off"]))
     sendEvent(name: "supportedThermostatFanModes", value: groovy.json.JsonOutput.toJson(["auto", "on", "circulate"]))
 
     // Schedule auto refresh if enabled
@@ -108,11 +109,15 @@ def updated() {
 }
 
 def initialize() {
-    // Ensure supported modes are set (for devices installed before this was added)
-    sendEvent(name: "supportedThermostatModes", value: groovy.json.JsonOutput.toJson(["heat", "cool", "auto", "off", "emergency heat"]))
+    // Ensure supported fan modes are set (for devices installed before this was added)
     sendEvent(name: "supportedThermostatFanModes", value: groovy.json.JsonOutput.toJson(["auto", "on", "circulate"]))
 
-    // Initial refresh
+    // Set base thermostat modes if not already set - emergency heat added dynamically via updateThermostatData()
+    if (!device.currentValue("supportedThermostatModes")) {
+        sendEvent(name: "supportedThermostatModes", value: groovy.json.JsonOutput.toJson(["heat", "cool", "auto", "off"]))
+    }
+
+    // Initial refresh - this will trigger updateThermostatData() which sets correct modes
     refresh()
 }
 
@@ -152,6 +157,23 @@ def updateThermostatData(thermostat) {
         // Changeable values (current settings)
         def changeableValues = thermostat.changeableValues
         if (changeableValues) {
+            // Dynamic capability detection: check if emergencyHeatActive field exists
+            // The PRESENCE of this field (not its value) indicates the thermostat supports emergency heat
+            def supportsEmergencyHeat = changeableValues.containsKey('emergencyHeatActive')
+
+            // Build supported modes list dynamically
+            def baseModes = ["heat", "cool", "auto", "off"]
+            def supportedModes = supportsEmergencyHeat ? (baseModes + ["emergency heat"]) : baseModes
+
+            // Only update if the modes have changed
+            def currentModesJson = device.currentValue("supportedThermostatModes")
+            def newModesJson = groovy.json.JsonOutput.toJson(supportedModes)
+
+            if (currentModesJson != newModesJson) {
+                sendEvent(name: "supportedThermostatModes", value: newModesJson)
+                if (descTextEnable) log.info "${device.displayName} supported modes updated: ${supportedModes}"
+            }
+
             // HVAC Mode - check for emergency heat active flag
             def emergencyHeatActive = changeableValues.emergencyHeatActive ?: false
             def hvacMode = convertResideoModeToHubitat(changeableValues.mode, emergencyHeatActive)
@@ -315,6 +337,20 @@ def fanCirculate() {
 
 def emergencyHeat() {
     if (debugOutput) log.debug "Setting emergency heat mode"
+
+    // Check if this thermostat supports emergency heat
+    def supportedModesJson = device.currentValue("supportedThermostatModes")
+    if (supportedModesJson) {
+        try {
+            def supportedModes = new groovy.json.JsonSlurper().parseText(supportedModesJson)
+            if (!supportedModes.contains("emergency heat")) {
+                log.warn "${device.displayName} does not support emergency heat mode - this feature requires a heat pump system with auxiliary/backup heating"
+                return
+            }
+        } catch (Exception e) {
+            if (debugOutput) log.debug "Could not parse supported modes, proceeding with emergency heat command"
+        }
+    }
 
     def result = parent.sendThermostatCommand(device.deviceNetworkId, "setEmergencyHeat", [
         emergencyHeatActive: true
