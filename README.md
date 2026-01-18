@@ -184,6 +184,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.2.3** - Fix supported thermostat modes not populating for existing devices
 - **v1.2.2** - Emergency heat restores previous mode if not supported
 - **v1.2.1** - Emergency heat now verifies thermostat support, shows error if not available
 - **v1.2.0** - Added emergency heat support for heat pump systems
