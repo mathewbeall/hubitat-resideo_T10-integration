@@ -196,6 +196,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.4.1** - Fix Celsius unit display showing F instead of C
 - **v1.4.0** - Celsius mode support - temperatures displayed in thermostat's native unit (F or C), 0.5 degree precision for Celsius thermostats
 - **v1.3.0** - Dynamic capability detection - supportedThermostatModes now reflects actual thermostat capabilities (emergency heat only shown for thermostats that support it)
 - **v1.2.9** - Fix supported modes - use JSON format for JSON_OBJECT attributes
