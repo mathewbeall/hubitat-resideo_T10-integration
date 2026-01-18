@@ -109,6 +109,7 @@ def mainPage() {
         }
 
         section("Options") {
+            input "refreshInterval", "number", title: "Auto Refresh Interval (minutes)", defaultValue: 5, range: "1..60", description: "How often to update thermostat data from Resideo API"
             input "debugOutput", "bool", title: "Enable debug logging", defaultValue: false
             input "descTextEnable", "bool", title: "Enable descriptionText logging", defaultValue: true
         }
@@ -534,11 +535,16 @@ def initialize() {
     // Schedule token refresh (every 23 hours)
     schedule("0 0 1 * * ?", refreshAccessToken)
 
-    // Schedule regular updates (every 5 minutes)
-    schedule("0 */5 * * * ?", updateAllDevices)
+    // Schedule regular updates using user-configurable interval (default 5 minutes)
+    def interval = settings.refreshInterval ?: 5
+    schedule("0 */${interval} * * * ?", updateAllDevices)
+    log.info "Scheduled thermostat updates every ${interval} minutes"
 
     // Clean up old scheduled jobs
     unschedule("discoveryRefresh")
+
+    // Clear any pending refresh flags
+    state.refreshPending = false
 }
 
 def uninstalled() {
@@ -711,10 +717,34 @@ def installThermostat(thermostat) {
     }
 }
 
+/**
+ * Debounced refresh request from drivers
+ * Prevents multiple drivers from triggering duplicate API calls
+ */
+def requestRefresh() {
+    if (state.refreshPending) {
+        logDebug "Refresh already pending, skipping duplicate request"
+        return
+    }
+
+    state.refreshPending = true
+    runIn(2, "executeRefresh")
+    logDebug "Refresh requested, will execute in 2 seconds"
+}
+
+/**
+ * Execute the debounced refresh
+ */
+def executeRefresh() {
+    state.refreshPending = false
+    updateAllDevices()
+}
+
 def updateAllDevices() {
     if (debugOutput) logDebug "Updating all thermostat devices"
 
-    discoverThermostats() // Refresh data
+    discoverThermostats() // Refresh data from API
+    state.lastRefresh = now() // Track when we last refreshed
 
     getChildDevices().each { device ->
         def deviceId = device.deviceNetworkId
@@ -745,16 +775,26 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
         return [success: false, error: "No access token"]
     }
 
-    logDebug "Getting fresh thermostat data before sending command..."
+    // Use cached thermostat data if available and fresh (less than 60 seconds old)
+    // This avoids unnecessary API calls before every command
+    def cacheAge = state.lastRefresh ? (now() - state.lastRefresh) : Long.MAX_VALUE
+    def cacheStale = cacheAge > 60000  // 60 seconds
 
-    // First test if basic API access works
-    if (!testApiAccess()) {
-        log.error "API access test failed - cannot proceed with command"
-        return [success: false, error: "API access failed"]
+    if (!state.thermostats || state.thermostats.size() == 0 || cacheStale) {
+        logDebug "Thermostat cache ${cacheStale ? 'stale' : 'empty'}, fetching fresh data..."
+
+        // Test API access only if we need to refresh
+        if (!testApiAccess()) {
+            log.error "API access test failed - cannot proceed with command"
+            return [success: false, error: "API access failed"]
+        }
+
+        discoverThermostats()
+        state.lastRefresh = now()
+        pauseExecution(500)
+    } else {
+        logDebug "Using cached thermostat data (${(cacheAge/1000).toInteger()}s old)"
     }
-
-    discoverThermostats()
-    pauseExecution(500)
 
     // Get the thermostat data to find location ID
     def thermostat = state.thermostats?.find { it.deviceID == deviceId }

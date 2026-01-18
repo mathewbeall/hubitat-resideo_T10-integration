@@ -117,11 +117,11 @@ Use these commands in rules, dashboards, or device pages:
 ## 🔧 Configuration Options
 
 ### Device Preferences
-- **Auto Refresh** - How often to update (1-60 minutes)
 - **Debug Logging** - Enable for troubleshooting
 - **Description Logging** - Enable status messages
 
 ### App Settings
+- **Refresh Interval** - How often to update thermostat data (1-60 minutes, default 5)
 - **API Credentials** - Consumer Key and Secret from Resideo
 - **OAuth Authentication** - Secure connection to Resideo API
 - **Device Discovery** - Automatically find your thermostats
@@ -201,6 +201,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.5.0** - Reduce API calls - centralized refresh scheduling in app with debouncing, configurable refresh interval
 - **v1.4.x** - Celsius/Fahrenheit support - temperatures automatically display in thermostat's native unit with proper precision (integers for °F, 0.5° increments for °C)
 - **v1.3.0** - Dynamic capability detection - supportedThermostatModes now reflects actual thermostat capabilities (emergency heat only shown for thermostats that support it)
 - **v1.2.9** - Fix supported modes - use JSON format for JSON_OBJECT attributes

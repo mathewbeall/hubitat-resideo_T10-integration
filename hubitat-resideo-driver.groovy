@@ -67,7 +67,7 @@ metadata {
     }
 
     preferences {
-        input "autoRefresh", "number", title: "Auto Refresh Interval (minutes)", defaultValue: 5, required: false
+        // Note: Auto-refresh is now controlled by the parent app to prevent duplicate API calls
         input "debugOutput", "bool", title: "Enable debug logging", defaultValue: false
         input "descTextEnable", "bool", title: "Enable descriptionText logging", defaultValue: true
     }
@@ -81,24 +81,15 @@ def installed() {
     sendEvent(name: "supportedThermostatModes", value: groovy.json.JsonOutput.toJson(["heat", "cool", "auto", "off"]))
     sendEvent(name: "supportedThermostatFanModes", value: groovy.json.JsonOutput.toJson(["auto", "on", "circulate"]))
 
-    // Schedule auto refresh if enabled
-    if (autoRefresh && autoRefresh > 0) {
-        schedule("0 */${autoRefresh} * * * ?", "refresh")
-    }
-
+    // Note: No per-device refresh scheduling - parent app handles centralized refresh
     initialize()
 }
 
 def updated() {
     if (debugOutput) log.debug "Updated Resideo Direct Thermostat: ${device.displayName}"
 
-    // Unschedule existing jobs
+    // Unschedule any legacy auto-refresh jobs from older versions
     unschedule()
-
-    // Schedule auto refresh if enabled
-    if (autoRefresh && autoRefresh > 0) {
-        schedule("0 */${autoRefresh} * * * ?", "refresh")
-    }
 
     // Auto-disable debug logging after 30 minutes
     if (debugOutput) {
@@ -117,15 +108,15 @@ def initialize() {
         sendEvent(name: "supportedThermostatModes", value: groovy.json.JsonOutput.toJson(["heat", "cool", "auto", "off"]))
     }
 
-    // Initial refresh - this will trigger updateThermostatData() which sets correct modes
-    refresh()
+    // Note: Initial data will be loaded by parent app's updateAllDevices()
+    // Do NOT call refresh() here to avoid duplicate API calls on install
 }
 
 def refresh() {
     if (debugOutput) log.debug "Refreshing thermostat data for ${device.displayName}"
 
-    // The parent app will call updateThermostatData() with fresh data
-    parent.updateAllDevices()
+    // Use debounced refresh to prevent multiple devices from triggering duplicate API calls
+    parent.requestRefresh()
 }
 
 def updateThermostatData(thermostat) {
