@@ -28,10 +28,22 @@ hubitat-resideo-T10-integration/
 - **Honeywell Home account**
 - **Resideo Developer account** (free)
 
-### Installation Steps
+### Installation Methods
+
+#### Option 1: Hubitat Package Manager (Recommended)
+The easiest way to install - and it **automatically keeps you updated** when new versions are released!
+
 1. **Get developer credentials** from [developer.honeywellhome.com](https://developer.honeywellhome.com)
-2. **Install the app code** in Hubitat
-3. **Install the driver code** in Hubitat
+2. **Open HPM** in your Hubitat Apps
+3. **Install** → **Search by Keywords** → Search for "Resideo T10"
+4. **Configure OAuth** and add your thermostats
+
+#### Option 2: Manual Installation
+If you prefer to install manually:
+
+1. **Get developer credentials** from [developer.honeywellhome.com](https://developer.honeywellhome.com)
+2. **Install the app code** in Hubitat (Apps Code → New App)
+3. **Install the driver code** in Hubitat (Drivers Code → New Driver)
 4. **Configure OAuth** in the app
 5. **Add your thermostats** and start controlling!
 
