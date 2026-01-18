@@ -147,10 +147,10 @@ def updateThermostatData(thermostat) {
             if (descTextEnable) log.info "${device.displayName} native temperature unit is ${nativeUnit}"
         }
 
-        // Temperature - convert from native unit to display unit
+        // Temperature - format with proper precision for the unit
         def temperature = thermostat.indoorTemperature
         if (temperature != null) {
-            def temp = convertTemperature(temperature, nativeUnit, nativeUnit)
+            def temp = formatTemperature(temperature, nativeUnit)
             sendEvent(name: "temperature", value: temp, unit: "°${nativeUnit}")
             if (descTextEnable) log.info "${device.displayName} temperature is ${temp}°${nativeUnit}"
         }
@@ -162,10 +162,10 @@ def updateThermostatData(thermostat) {
             if (descTextEnable) log.info "${device.displayName} humidity is ${humidity}%"
         }
 
-        // Outdoor temperature - convert from native unit to display unit
+        // Outdoor temperature - format with proper precision for the unit
         def outdoorTemp = thermostat.outdoorTemperature
         if (outdoorTemp != null) {
-            def temp = convertTemperature(outdoorTemp, nativeUnit, nativeUnit)
+            def temp = formatTemperature(outdoorTemp, nativeUnit)
             sendEvent(name: "outdoorTemperature", value: temp, unit: "°${nativeUnit}")
         }
 
@@ -195,21 +195,21 @@ def updateThermostatData(thermostat) {
             sendEvent(name: "thermostatMode", value: hvacMode)
             if (descTextEnable) log.info "${device.displayName} thermostat mode is ${hvacMode}"
 
-            // Setpoints - convert from native unit to display unit
+            // Setpoints - format with proper precision for the unit
             if (changeableValues.heatSetpoint != null) {
-                def heatTemp = convertTemperature(changeableValues.heatSetpoint, nativeUnit, nativeUnit)
+                def heatTemp = formatTemperature(changeableValues.heatSetpoint, nativeUnit)
                 sendEvent(name: "heatingSetpoint", value: heatTemp, unit: "°${nativeUnit}")
             }
 
             if (changeableValues.coolSetpoint != null) {
-                def coolTemp = convertTemperature(changeableValues.coolSetpoint, nativeUnit, nativeUnit)
+                def coolTemp = formatTemperature(changeableValues.coolSetpoint, nativeUnit)
                 sendEvent(name: "coolingSetpoint", value: coolTemp, unit: "°${nativeUnit}")
             }
 
-            // Current setpoint (based on mode) - convert from native unit to display unit
+            // Current setpoint (based on mode) - format with proper precision for the unit
             def currentSetpoint = getCurrentSetpoint(hvacMode, changeableValues.heatSetpoint, changeableValues.coolSetpoint)
             if (currentSetpoint != null) {
-                def setpointTemp = convertTemperature(currentSetpoint, nativeUnit, nativeUnit)
+                def setpointTemp = formatTemperature(currentSetpoint, nativeUnit)
                 sendEvent(name: "thermostatSetpoint", value: setpointTemp, unit: "°${nativeUnit}")
             }
 
@@ -249,13 +249,12 @@ def setHeatingSetpoint(temperature) {
     def nativeUnit = getNativeUnit()
     if (debugOutput) log.debug "Setting heating setpoint to ${temperature}°${nativeUnit}"
 
-    // Temperature is already in native unit, just need to round appropriately
-    def nativeTemp = temperature
-    // Round appropriately: 0.5 for Celsius, 1 for Fahrenheit
+    // Round appropriately: 0.5 for Celsius, integer for Fahrenheit
+    def nativeTemp
     if (nativeUnit == "C") {
-        nativeTemp = Math.round(nativeTemp * 2) / 2
+        nativeTemp = Math.round(temperature * 2) / 2
     } else {
-        nativeTemp = Math.round(nativeTemp)
+        nativeTemp = Math.round(temperature) as Integer
     }
 
     def result = parent.sendThermostatCommand(device.deviceNetworkId, "setTemperature", [
@@ -263,8 +262,8 @@ def setHeatingSetpoint(temperature) {
     ])
 
     if (result.success) {
-        sendEvent(name: "heatingSetpoint", value: temperature, unit: "°${nativeUnit}")
-        if (descTextEnable) log.info "${device.displayName} heating setpoint set to ${temperature}°${nativeUnit}"
+        sendEvent(name: "heatingSetpoint", value: nativeTemp, unit: "°${nativeUnit}")
+        if (descTextEnable) log.info "${device.displayName} heating setpoint set to ${nativeTemp}°${nativeUnit}"
     } else {
         log.error "Failed to set heating setpoint: ${result.error}"
     }
@@ -274,13 +273,12 @@ def setCoolingSetpoint(temperature) {
     def nativeUnit = getNativeUnit()
     if (debugOutput) log.debug "Setting cooling setpoint to ${temperature}°${nativeUnit}"
 
-    // Temperature is already in native unit, just need to round appropriately
-    def nativeTemp = temperature
-    // Round appropriately: 0.5 for Celsius, 1 for Fahrenheit
+    // Round appropriately: 0.5 for Celsius, integer for Fahrenheit
+    def nativeTemp
     if (nativeUnit == "C") {
-        nativeTemp = Math.round(nativeTemp * 2) / 2
+        nativeTemp = Math.round(temperature * 2) / 2
     } else {
-        nativeTemp = Math.round(nativeTemp)
+        nativeTemp = Math.round(temperature) as Integer
     }
 
     def result = parent.sendThermostatCommand(device.deviceNetworkId, "setTemperature", [
@@ -288,8 +286,8 @@ def setCoolingSetpoint(temperature) {
     ])
 
     if (result.success) {
-        sendEvent(name: "coolingSetpoint", value: temperature, unit: "°${nativeUnit}")
-        if (descTextEnable) log.info "${device.displayName} cooling setpoint set to ${temperature}°${nativeUnit}"
+        sendEvent(name: "coolingSetpoint", value: nativeTemp, unit: "°${nativeUnit}")
+        if (descTextEnable) log.info "${device.displayName} cooling setpoint set to ${nativeTemp}°${nativeUnit}"
     } else {
         log.error "Failed to set cooling setpoint: ${result.error}"
     }
@@ -527,6 +525,20 @@ private convertTemperature(value, fromUnit, toUnit) {
  */
 private getNativeUnit() {
     return device.getDataValue("temperatureUnit") ?: "F"
+}
+
+/**
+ * Format temperature with proper precision for the unit
+ * Fahrenheit: integer (no decimals)
+ * Celsius: 0.5 degree precision
+ */
+private formatTemperature(value, unit) {
+    if (value == null) return null
+    if (unit == "C") {
+        return Math.round(value * 2) / 2
+    } else {
+        return Math.round(value) as Integer
+    }
 }
 
 /**
