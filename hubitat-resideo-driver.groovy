@@ -45,6 +45,7 @@ metadata {
         attribute "setpointStatus", "string"
         attribute "scheduleStatus", "string"
         attribute "lastUpdate", "string"
+        attribute "temperatureUnit", "string"  // "F" or "C" - native thermostat setting
 
         // Commands
         command "setHeatingSetpoint", [[name:"temperature*", type:"NUMBER", description:"Heating setpoint temperature"]]
@@ -66,7 +67,6 @@ metadata {
     }
 
     preferences {
-        input "tempScale", "enum", title: "Temperature Scale", options: ["F", "C"], defaultValue: "F", required: false
         input "autoRefresh", "number", title: "Auto Refresh Interval (minutes)", defaultValue: 5, required: false
         input "debugOutput", "bool", title: "Enable debug logging", defaultValue: false
         input "descTextEnable", "bool", title: "Enable descriptionText logging", defaultValue: true
@@ -132,12 +132,27 @@ def updateThermostatData(thermostat) {
     if (debugOutput) log.debug "Updating thermostat data: ${thermostat}"
 
     try {
-        // Temperature
+        // Determine native temperature unit from API - "Fahrenheit" or "Celsius"
+        def nativeUnit = thermostat.units?.startsWith("C") ? "C" : "F"
+        def displayUnit = getDisplayUnit()
+
+        // Update device data if native unit has changed
+        if (device.getDataValue("temperatureUnit") != nativeUnit) {
+            device.updateDataValue("temperatureUnit", nativeUnit)
+        }
+
+        // Send temperatureUnit event
+        if (device.currentValue("temperatureUnit") != nativeUnit) {
+            sendEvent(name: "temperatureUnit", value: nativeUnit)
+            if (descTextEnable) log.info "${device.displayName} native temperature unit is ${nativeUnit}"
+        }
+
+        // Temperature - convert from native unit to display unit
         def temperature = thermostat.indoorTemperature
         if (temperature != null) {
-            def temp = (tempScale == "C") ? fahrenheitToCelsius(temperature) : temperature
-            sendEvent(name: "temperature", value: temp, unit: "°${tempScale}")
-            if (descTextEnable) log.info "${device.displayName} temperature is ${temp}°${tempScale}"
+            def temp = convertTemperature(temperature, nativeUnit, displayUnit)
+            sendEvent(name: "temperature", value: temp, unit: "°${displayUnit}")
+            if (descTextEnable) log.info "${device.displayName} temperature is ${temp}°${displayUnit}"
         }
 
         // Humidity
@@ -147,11 +162,11 @@ def updateThermostatData(thermostat) {
             if (descTextEnable) log.info "${device.displayName} humidity is ${humidity}%"
         }
 
-        // Outdoor temperature
+        // Outdoor temperature - convert from native unit to display unit
         def outdoorTemp = thermostat.outdoorTemperature
         if (outdoorTemp != null) {
-            def temp = (tempScale == "C") ? fahrenheitToCelsius(outdoorTemp) : outdoorTemp
-            sendEvent(name: "outdoorTemperature", value: temp, unit: "°${tempScale}")
+            def temp = convertTemperature(outdoorTemp, nativeUnit, displayUnit)
+            sendEvent(name: "outdoorTemperature", value: temp, unit: "°${displayUnit}")
         }
 
         // Changeable values (current settings)
@@ -180,22 +195,22 @@ def updateThermostatData(thermostat) {
             sendEvent(name: "thermostatMode", value: hvacMode)
             if (descTextEnable) log.info "${device.displayName} thermostat mode is ${hvacMode}"
 
-            // Setpoints
+            // Setpoints - convert from native unit to display unit
             if (changeableValues.heatSetpoint != null) {
-                def heatTemp = (tempScale == "C") ? fahrenheitToCelsius(changeableValues.heatSetpoint) : changeableValues.heatSetpoint
-                sendEvent(name: "heatingSetpoint", value: heatTemp, unit: "°${tempScale}")
+                def heatTemp = convertTemperature(changeableValues.heatSetpoint, nativeUnit, displayUnit)
+                sendEvent(name: "heatingSetpoint", value: heatTemp, unit: "°${displayUnit}")
             }
 
             if (changeableValues.coolSetpoint != null) {
-                def coolTemp = (tempScale == "C") ? fahrenheitToCelsius(changeableValues.coolSetpoint) : changeableValues.coolSetpoint
-                sendEvent(name: "coolingSetpoint", value: coolTemp, unit: "°${tempScale}")
+                def coolTemp = convertTemperature(changeableValues.coolSetpoint, nativeUnit, displayUnit)
+                sendEvent(name: "coolingSetpoint", value: coolTemp, unit: "°${displayUnit}")
             }
 
-            // Current setpoint (based on mode)
+            // Current setpoint (based on mode) - convert from native unit to display unit
             def currentSetpoint = getCurrentSetpoint(hvacMode, changeableValues.heatSetpoint, changeableValues.coolSetpoint)
             if (currentSetpoint != null) {
-                def setpointTemp = (tempScale == "C") ? fahrenheitToCelsius(currentSetpoint) : currentSetpoint
-                sendEvent(name: "thermostatSetpoint", value: setpointTemp, unit: "°${tempScale}")
+                def setpointTemp = convertTemperature(currentSetpoint, nativeUnit, displayUnit)
+                sendEvent(name: "thermostatSetpoint", value: setpointTemp, unit: "°${displayUnit}")
             }
 
             // Setpoint status
@@ -231,34 +246,52 @@ def updateThermostatData(thermostat) {
 // ========== Thermostat Control Commands ==========
 
 def setHeatingSetpoint(temperature) {
-    if (debugOutput) log.debug "Setting heating setpoint to ${temperature}°${tempScale}"
+    def displayUnit = getDisplayUnit()
+    def nativeUnit = getNativeUnit()
+    if (debugOutput) log.debug "Setting heating setpoint to ${temperature}°${displayUnit} (native unit: ${nativeUnit})"
 
-    def tempF = (tempScale == "C") ? celsiusToFahrenheit(temperature) : temperature
+    // Convert from display unit to native unit for API
+    def nativeTemp = convertTemperature(temperature, displayUnit, nativeUnit)
+    // Round appropriately: 0.5 for Celsius, 1 for Fahrenheit
+    if (nativeUnit == "C") {
+        nativeTemp = Math.round(nativeTemp * 2) / 2
+    } else {
+        nativeTemp = Math.round(nativeTemp)
+    }
 
     def result = parent.sendThermostatCommand(device.deviceNetworkId, "setTemperature", [
-        heatSetpoint: tempF
+        heatSetpoint: nativeTemp
     ])
 
     if (result.success) {
-        sendEvent(name: "heatingSetpoint", value: temperature, unit: "°${tempScale}")
-        if (descTextEnable) log.info "${device.displayName} heating setpoint set to ${temperature}°${tempScale}"
+        sendEvent(name: "heatingSetpoint", value: temperature, unit: "°${displayUnit}")
+        if (descTextEnable) log.info "${device.displayName} heating setpoint set to ${temperature}°${displayUnit}"
     } else {
         log.error "Failed to set heating setpoint: ${result.error}"
     }
 }
 
 def setCoolingSetpoint(temperature) {
-    if (debugOutput) log.debug "Setting cooling setpoint to ${temperature}°${tempScale}"
+    def displayUnit = getDisplayUnit()
+    def nativeUnit = getNativeUnit()
+    if (debugOutput) log.debug "Setting cooling setpoint to ${temperature}°${displayUnit} (native unit: ${nativeUnit})"
 
-    def tempF = (tempScale == "C") ? celsiusToFahrenheit(temperature) : temperature
+    // Convert from display unit to native unit for API
+    def nativeTemp = convertTemperature(temperature, displayUnit, nativeUnit)
+    // Round appropriately: 0.5 for Celsius, 1 for Fahrenheit
+    if (nativeUnit == "C") {
+        nativeTemp = Math.round(nativeTemp * 2) / 2
+    } else {
+        nativeTemp = Math.round(nativeTemp)
+    }
 
     def result = parent.sendThermostatCommand(device.deviceNetworkId, "setTemperature", [
-        coolSetpoint: tempF
+        coolSetpoint: nativeTemp
     ])
 
     if (result.success) {
-        sendEvent(name: "coolingSetpoint", value: temperature, unit: "°${tempScale}")
-        if (descTextEnable) log.info "${device.displayName} cooling setpoint set to ${temperature}°${tempScale}"
+        sendEvent(name: "coolingSetpoint", value: temperature, unit: "°${displayUnit}")
+        if (descTextEnable) log.info "${device.displayName} cooling setpoint set to ${temperature}°${displayUnit}"
     } else {
         log.error "Failed to set cooling setpoint: ${result.error}"
     }
@@ -471,6 +504,40 @@ private getCurrentSetpoint(mode, heatSetpoint, coolSetpoint) {
 }
 
 // ========== Temperature Conversion ==========
+
+/**
+ * Convert temperature between units with proper precision
+ * @param value The temperature value to convert
+ * @param fromUnit The source unit ("F" or "C")
+ * @param toUnit The target unit ("F" or "C")
+ * @return The converted temperature with appropriate precision
+ */
+private convertTemperature(value, fromUnit, toUnit) {
+    if (fromUnit == toUnit || value == null) return value
+    if (fromUnit == "F" && toUnit == "C") {
+        def celsius = (value - 32) * 5 / 9
+        return Math.round(celsius * 2) / 2  // Round to 0.5 for Celsius
+    } else if (fromUnit == "C" && toUnit == "F") {
+        return Math.round((value * 9 / 5 + 32))  // Round to 1 for Fahrenheit
+    }
+    return value
+}
+
+/**
+ * Get the thermostat's native temperature unit from device data
+ * @return "F" or "C" based on thermostat configuration
+ */
+private getNativeUnit() {
+    return device.getDataValue("temperatureUnit") ?: "F"
+}
+
+/**
+ * Get the display unit (same as thermostat's native unit)
+ * @return "F" or "C" based on thermostat configuration
+ */
+private getDisplayUnit() {
+    return getNativeUnit()
+}
 
 private fahrenheitToCelsius(fahrenheit) {
     return Math.round((fahrenheit - 32) * 5 / 9 * 10) / 10

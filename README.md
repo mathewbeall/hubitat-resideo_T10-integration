@@ -87,6 +87,7 @@ The integration provides these device attributes:
 | `thermostatOperatingState` | Equipment status | `cooling` |
 | `outdoorTemperature` | Outside temperature | `78°F` |
 | `equipmentStatus` | Detailed equipment state | `EquipmentOff` |
+| `temperatureUnit` | Thermostat's native temperature unit | `F` or `C` |
 
 ## 🎮 Control Commands
 
@@ -111,7 +112,6 @@ Use these commands in rules, dashboards, or device pages:
 ## 🔧 Configuration Options
 
 ### Device Preferences
-- **Temperature Scale** - Fahrenheit or Celsius display
 - **Auto Refresh** - How often to update (1-60 minutes)
 - **Debug Logging** - Enable for troubleshooting
 - **Description Logging** - Enable status messages
@@ -196,6 +196,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.4.0** - Celsius mode support - temperatures displayed in thermostat's native unit (F or C), 0.5 degree precision for Celsius thermostats
 - **v1.3.0** - Dynamic capability detection - supportedThermostatModes now reflects actual thermostat capabilities (emergency heat only shown for thermostats that support it)
 - **v1.2.9** - Fix supported modes - use JSON format for JSON_OBJECT attributes
 - **v1.2.8** - Fix schedule conflict - rename setSchedule command to setScheduleMode

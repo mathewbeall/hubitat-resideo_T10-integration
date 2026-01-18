@@ -342,12 +342,13 @@ def discoveryPage() {
                         def temperature = thermostat.indoorTemperature
                         def humidity = thermostat.indoorHumidity
                         def mode = thermostat.changeableValues?.mode ?: "Unknown"
+                        def tempUnit = thermostat.units?.startsWith("C") ? "C" : "F"
 
                         paragraph """
                         <div style='background-color:#e8f5e8; border:2px solid #4caf50; padding:12px; border-radius:5px; margin:8px 0;'>
                             <b>${name}</b> ✅<br/>
                             Device ID: ${deviceId}<br/>
-                            Current: ${temperature}°F, ${humidity}% humidity<br/>
+                            Current: ${temperature}°${tempUnit}, ${humidity}% humidity<br/>
                             Mode: ${mode}<br/>
                             <b style='color:#2e7d32'>Status: ✅ Installed and Ready</b>
                         </div>
@@ -408,12 +409,13 @@ def discoveryPage() {
                         def temperature = thermostat.indoorTemperature
                         def humidity = thermostat.indoorHumidity
                         def mode = thermostat.changeableValues?.mode ?: "Unknown"
+                        def tempUnit = thermostat.units?.startsWith("C") ? "C" : "F"
 
                         paragraph """
                         <div style='background-color:#f9f9f9; border:2px solid #ddd; padding:12px; border-radius:5px; margin:8px 0;'>
                             <b>${name}</b><br/>
                             Device ID: ${deviceId}<br/>
-                            Current: ${temperature}°F, ${humidity}% humidity<br/>
+                            Current: ${temperature}°${tempUnit}, ${humidity}% humidity<br/>
                             Mode: ${mode}<br/>
                             <b style='color:#666'>Status: ⚪ Available for Installation</b>
                         </div>
@@ -675,6 +677,8 @@ def installThermostat(thermostat) {
     def deviceId = thermostat.deviceID
     def name = thermostat.userDefinedDeviceName
     def model = thermostat.deviceModel ?: "T10"
+    // Determine native temperature unit - API returns "Fahrenheit" or "Celsius"
+    def nativeUnit = thermostat.units?.startsWith("C") ? "C" : "F"
 
     try {
         def childDevice = addChildDevice(
@@ -688,7 +692,8 @@ def installThermostat(thermostat) {
                 "data": [
                     "locationID": thermostat.locationID,
                     "locationName": thermostat.locationName,
-                    "deviceModel": model
+                    "deviceModel": model,
+                    "temperatureUnit": nativeUnit
                 ]
             ]
         )
@@ -766,6 +771,10 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
     def currentValues = thermostat.changeableValues
     logDebug "Fresh changeable values: ${currentValues}"
 
+    // Determine native temperature unit - API returns "Fahrenheit" or "Celsius"
+    def nativeUnit = thermostat.units?.startsWith("C") ? "C" : "F"
+    logDebug "Thermostat native unit: ${nativeUnit}"
+
     // CRITICAL: This log.info is somehow essential for proper execution
     log.info "Current thermostat values: ${currentValues}"
 
@@ -778,8 +787,22 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
         case "setTemperature":
             requestBody = currentValues?.clone() ?: [:]
             if (parameters.mode) requestBody.mode = parameters.mode
-            if (parameters.heatSetpoint != null) requestBody.heatSetpoint = parameters.heatSetpoint
-            if (parameters.coolSetpoint != null) requestBody.coolSetpoint = parameters.coolSetpoint
+            if (parameters.heatSetpoint != null) {
+                // Round appropriately: 0.5 for Celsius, 1 for Fahrenheit
+                if (nativeUnit == "C") {
+                    requestBody.heatSetpoint = Math.round(parameters.heatSetpoint * 2) / 2
+                } else {
+                    requestBody.heatSetpoint = Math.round(parameters.heatSetpoint as Double) as Integer
+                }
+            }
+            if (parameters.coolSetpoint != null) {
+                // Round appropriately: 0.5 for Celsius, 1 for Fahrenheit
+                if (nativeUnit == "C") {
+                    requestBody.coolSetpoint = Math.round(parameters.coolSetpoint * 2) / 2
+                } else {
+                    requestBody.coolSetpoint = Math.round(parameters.coolSetpoint as Double) as Integer
+                }
+            }
             requestBody.thermostatSetpointStatus = "PermanentHold"
             break
 
@@ -794,18 +817,34 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
             requestBody.remove('EmergencyHeatActive')
             requestBody.remove('emergencyHeatActive')
 
-            // Force integers for temperature values
+            // Round temperature values appropriately: 0.5 for Celsius, 1 for Fahrenheit
             if (requestBody.heatSetpoint != null) {
-                requestBody.heatSetpoint = Math.round(requestBody.heatSetpoint as Double) as Integer
+                if (nativeUnit == "C") {
+                    requestBody.heatSetpoint = Math.round(requestBody.heatSetpoint * 2) / 2
+                } else {
+                    requestBody.heatSetpoint = Math.round(requestBody.heatSetpoint as Double) as Integer
+                }
             }
             if (requestBody.coolSetpoint != null) {
-                requestBody.coolSetpoint = Math.round(requestBody.coolSetpoint as Double) as Integer
+                if (nativeUnit == "C") {
+                    requestBody.coolSetpoint = Math.round(requestBody.coolSetpoint * 2) / 2
+                } else {
+                    requestBody.coolSetpoint = Math.round(requestBody.coolSetpoint as Double) as Integer
+                }
             }
             if (requestBody.endHeatSetpoint != null) {
-                requestBody.endHeatSetpoint = Math.round(requestBody.endHeatSetpoint as Double) as Integer
+                if (nativeUnit == "C") {
+                    requestBody.endHeatSetpoint = Math.round(requestBody.endHeatSetpoint * 2) / 2
+                } else {
+                    requestBody.endHeatSetpoint = Math.round(requestBody.endHeatSetpoint as Double) as Integer
+                }
             }
             if (requestBody.endCoolSetpoint != null) {
-                requestBody.endCoolSetpoint = Math.round(requestBody.endCoolSetpoint as Double) as Integer
+                if (nativeUnit == "C") {
+                    requestBody.endCoolSetpoint = Math.round(requestBody.endCoolSetpoint * 2) / 2
+                } else {
+                    requestBody.endCoolSetpoint = Math.round(requestBody.endCoolSetpoint as Double) as Integer
+                }
             }
             // Force boolean for boolean values
             if (requestBody.autoChangeoverActive != null) {
@@ -831,18 +870,34 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
             requestBody.remove('EmergencyHeatActive')
             requestBody.remove('emergencyHeatActive')
 
-            // Force integers for temperature values
+            // Round temperature values appropriately: 0.5 for Celsius, 1 for Fahrenheit
             if (requestBody.heatSetpoint != null) {
-                requestBody.heatSetpoint = Math.round(requestBody.heatSetpoint as Double) as Integer
+                if (nativeUnit == "C") {
+                    requestBody.heatSetpoint = Math.round(requestBody.heatSetpoint * 2) / 2
+                } else {
+                    requestBody.heatSetpoint = Math.round(requestBody.heatSetpoint as Double) as Integer
+                }
             }
             if (requestBody.coolSetpoint != null) {
-                requestBody.coolSetpoint = Math.round(requestBody.coolSetpoint as Double) as Integer
+                if (nativeUnit == "C") {
+                    requestBody.coolSetpoint = Math.round(requestBody.coolSetpoint * 2) / 2
+                } else {
+                    requestBody.coolSetpoint = Math.round(requestBody.coolSetpoint as Double) as Integer
+                }
             }
             if (requestBody.endHeatSetpoint != null) {
-                requestBody.endHeatSetpoint = Math.round(requestBody.endHeatSetpoint as Double) as Integer
+                if (nativeUnit == "C") {
+                    requestBody.endHeatSetpoint = Math.round(requestBody.endHeatSetpoint * 2) / 2
+                } else {
+                    requestBody.endHeatSetpoint = Math.round(requestBody.endHeatSetpoint as Double) as Integer
+                }
             }
             if (requestBody.endCoolSetpoint != null) {
-                requestBody.endCoolSetpoint = Math.round(requestBody.endCoolSetpoint as Double) as Integer
+                if (nativeUnit == "C") {
+                    requestBody.endCoolSetpoint = Math.round(requestBody.endCoolSetpoint * 2) / 2
+                } else {
+                    requestBody.endCoolSetpoint = Math.round(requestBody.endCoolSetpoint as Double) as Integer
+                }
             }
             // Force boolean for boolean values
             if (requestBody.autoChangeoverActive != null) {
