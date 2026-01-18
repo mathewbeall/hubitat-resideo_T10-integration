@@ -240,8 +240,16 @@ def setHeatingSetpoint(temperature) {
     def nativeUnit = getNativeUnit()
     if (debugOutput) log.debug "Setting heating setpoint to ${temperature}°${nativeUnit}"
 
-    // Round appropriately: 0.5 for Celsius (with decimal), integer for Fahrenheit
-    def nativeTemp = formatTemperature(temperature, nativeUnit)
+    // Round appropriately: 0.5 for Celsius, integer for Fahrenheit
+    // For Fahrenheit, round in the direction of change to fix dashboard 0.5 increment issue
+    def nativeTemp
+    if (nativeUnit == "F") {
+        def currentSetpoint = device.currentValue("heatingSetpoint")
+        nativeTemp = (currentSetpoint != null && temperature < currentSetpoint) ?
+            Math.floor(temperature) as Integer : Math.ceil(temperature) as Integer
+    } else {
+        nativeTemp = formatTemperature(temperature, nativeUnit)
+    }
 
     def result = parent.sendThermostatCommand(device.deviceNetworkId, "setTemperature", [
         heatSetpoint: nativeTemp
@@ -259,8 +267,16 @@ def setCoolingSetpoint(temperature) {
     def nativeUnit = getNativeUnit()
     if (debugOutput) log.debug "Setting cooling setpoint to ${temperature}°${nativeUnit}"
 
-    // Round appropriately: 0.5 for Celsius (with decimal), integer for Fahrenheit
-    def nativeTemp = formatTemperature(temperature, nativeUnit)
+    // Round appropriately: 0.5 for Celsius, integer for Fahrenheit
+    // For Fahrenheit, round in the direction of change to fix dashboard 0.5 increment issue
+    def nativeTemp
+    if (nativeUnit == "F") {
+        def currentSetpoint = device.currentValue("coolingSetpoint")
+        nativeTemp = (currentSetpoint != null && temperature < currentSetpoint) ?
+            Math.floor(temperature) as Integer : Math.ceil(temperature) as Integer
+    } else {
+        nativeTemp = formatTemperature(temperature, nativeUnit)
+    }
 
     def result = parent.sendThermostatCommand(device.deviceNetworkId, "setTemperature", [
         coolSetpoint: nativeTemp

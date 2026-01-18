@@ -201,6 +201,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.5.1** - Fix Fahrenheit down button - dashboard 0.5 increments now round in correct direction (Issue #8)
 - **v1.5.0** - Reduce API calls - centralized refresh scheduling in app with debouncing, configurable refresh interval
 - **v1.4.x** - Celsius/Fahrenheit support - temperatures automatically display in thermostat's native unit with proper precision (integers for °F, 0.5° increments for °C)
 - **v1.3.0** - Dynamic capability detection - supportedThermostatModes now reflects actual thermostat capabilities (emergency heat only shown for thermostats that support it)
