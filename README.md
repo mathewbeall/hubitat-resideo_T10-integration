@@ -58,6 +58,7 @@ If you prefer to install manually:
 - ✅ **Fan Control** - Auto, On, Circulate
 - ✅ **Real-time Status** - Current temperature, humidity, operating state
 - ✅ **Schedule Override** - Hold temperatures or follow schedule
+- ✅ **Fahrenheit & Celsius** - Automatically displays in thermostat's native unit with proper precision
 
 ### Hubitat Integration
 - ✅ **Native Device Support** - Full thermostat capability
@@ -78,16 +79,20 @@ The integration provides these device attributes:
 
 | Attribute | Description | Example |
 |-----------|-------------|---------|
-| `temperature` | Current room temperature | `72°F` |
+| `temperature` | Current room temperature | `72°F` or `21.5°C` |
 | `humidity` | Current humidity level | `45%` |
 | `thermostatMode` | Current HVAC mode (heat, cool, auto, off, emergency heat) | `heat` |
 | `thermostatFanMode` | Current fan setting | `auto` |
-| `heatingSetpoint` | Heating target temperature | `68°F` |
-| `coolingSetpoint` | Cooling target temperature | `74°F` |
+| `heatingSetpoint` | Heating target temperature | `68°F` or `20.0°C` |
+| `coolingSetpoint` | Cooling target temperature | `74°F` or `23.5°C` |
 | `thermostatOperatingState` | Equipment status | `cooling` |
-| `outdoorTemperature` | Outside temperature | `78°F` |
+| `outdoorTemperature` | Outside temperature | `78°F` or `25.5°C` |
 | `equipmentStatus` | Detailed equipment state | `EquipmentOff` |
 | `temperatureUnit` | Thermostat's native temperature unit | `F` or `C` |
+
+**Temperature Display:**
+- **Fahrenheit**: Displayed as whole numbers (68, 72, 74)
+- **Celsius**: Displayed with 0.5° precision (20.0, 20.5, 21.0)
 
 ## 🎮 Control Commands
 
@@ -196,11 +201,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
-- **v1.4.4** - Use BigDecimal to force Celsius decimal display (17.0 not 17)
-- **v1.4.3** - Celsius always shows decimal (17.0, 17.5), Fahrenheit shows integer (66)
-- **v1.4.2** - Fix Fahrenheit temperatures showing .0 decimal
-- **v1.4.1** - Fix Celsius unit display showing F instead of C
-- **v1.4.0** - Celsius mode support - temperatures displayed in thermostat's native unit (F or C), 0.5 degree precision for Celsius thermostats
+- **v1.4.x** - Celsius/Fahrenheit support - temperatures automatically display in thermostat's native unit with proper precision (integers for °F, 0.5° increments for °C)
 - **v1.3.0** - Dynamic capability detection - supportedThermostatModes now reflects actual thermostat capabilities (emergency heat only shown for thermostats that support it)
 - **v1.2.9** - Fix supported modes - use JSON format for JSON_OBJECT attributes
 - **v1.2.8** - Fix schedule conflict - rename setSchedule command to setScheduleMode
