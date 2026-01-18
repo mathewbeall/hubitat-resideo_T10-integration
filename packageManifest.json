@@ -1,10 +1,10 @@
 {
     "packageName": "Hubitat Resideo T10 Integration",
     "author": "Mathew Beall",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "minimumHEVersion": "2.2.4",
     "dateReleased": "2026-01-17",
-    "releaseNotes": "Added emergency heat support for heat pump systems - new emergencyHeat() command and 'emergency heat' mode option",
+    "releaseNotes": "Emergency heat now verifies the thermostat actually supports it - shows error instead of silently falling back to regular heat",
     "documentationLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration/blob/main/README.md",
     "communityLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration",
     "apps": [

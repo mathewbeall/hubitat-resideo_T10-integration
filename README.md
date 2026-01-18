@@ -184,6 +184,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.2.1** - Emergency heat now verifies thermostat support, shows error if not available
 - **v1.2.0** - Added emergency heat support for heat pump systems
 - **v1.1.1** - Bug fixes and interface cleanup
 - **v1.1.0** - Major UX improvements and workflow enhancements
