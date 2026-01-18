@@ -196,6 +196,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.4.3** - Celsius always shows decimal (17.0, 17.5), Fahrenheit shows integer (66)
 - **v1.4.2** - Fix Fahrenheit temperatures showing .0 decimal
 - **v1.4.1** - Fix Celsius unit display showing F instead of C
 - **v1.4.0** - Celsius mode support - temperatures displayed in thermostat's native unit (F or C), 0.5 degree precision for Celsius thermostats

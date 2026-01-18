@@ -249,13 +249,8 @@ def setHeatingSetpoint(temperature) {
     def nativeUnit = getNativeUnit()
     if (debugOutput) log.debug "Setting heating setpoint to ${temperature}°${nativeUnit}"
 
-    // Round appropriately: 0.5 for Celsius, integer for Fahrenheit
-    def nativeTemp
-    if (nativeUnit == "C") {
-        nativeTemp = Math.round(temperature * 2) / 2
-    } else {
-        nativeTemp = Math.round(temperature) as Integer
-    }
+    // Round appropriately: 0.5 for Celsius (with decimal), integer for Fahrenheit
+    def nativeTemp = formatTemperature(temperature, nativeUnit)
 
     def result = parent.sendThermostatCommand(device.deviceNetworkId, "setTemperature", [
         heatSetpoint: nativeTemp
@@ -273,13 +268,8 @@ def setCoolingSetpoint(temperature) {
     def nativeUnit = getNativeUnit()
     if (debugOutput) log.debug "Setting cooling setpoint to ${temperature}°${nativeUnit}"
 
-    // Round appropriately: 0.5 for Celsius, integer for Fahrenheit
-    def nativeTemp
-    if (nativeUnit == "C") {
-        nativeTemp = Math.round(temperature * 2) / 2
-    } else {
-        nativeTemp = Math.round(temperature) as Integer
-    }
+    // Round appropriately: 0.5 for Celsius (with decimal), integer for Fahrenheit
+    def nativeTemp = formatTemperature(temperature, nativeUnit)
 
     def result = parent.sendThermostatCommand(device.deviceNetworkId, "setTemperature", [
         coolSetpoint: nativeTemp
@@ -530,12 +520,13 @@ private getNativeUnit() {
 /**
  * Format temperature with proper precision for the unit
  * Fahrenheit: integer (no decimals)
- * Celsius: 0.5 degree precision
+ * Celsius: 0.5 degree precision (always shows decimal, e.g., 17.0, 17.5)
  */
 private formatTemperature(value, unit) {
     if (value == null) return null
     if (unit == "C") {
-        return Math.round(value * 2) / 2
+        // Divide by 2.0 to ensure decimal result (17.0, 17.5, etc.)
+        return Math.round(value * 2) / 2.0
     } else {
         return Math.round(value) as Integer
     }
