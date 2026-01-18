@@ -78,8 +78,8 @@ Emergency heat bypasses the heat pump and uses only the auxiliary heating elemen
 
 **Resume Schedule**:
 1. Go to **Device Commands**
-2. Use `setSchedule("schedule")` to resume programmed schedule
-3. Or `setSchedule("hold")` to maintain current settings
+2. Use `setScheduleMode("schedule")` to resume programmed schedule
+3. Or `setScheduleMode("hold")` to maintain current settings
 
 ### Auto Refresh
 
