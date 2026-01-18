@@ -76,9 +76,9 @@ metadata {
 def installed() {
     if (debugOutput) log.debug "Installing Resideo Direct Thermostat: ${device.displayName}"
 
-    // Set initial values
-    sendEvent(name: "supportedThermostatModes", value: ["heat", "cool", "auto", "off", "emergency heat"])
-    sendEvent(name: "supportedThermostatFanModes", value: ["auto", "on", "circulate"])
+    // Set initial values - use JSON string format for JSON_OBJECT attributes
+    sendEvent(name: "supportedThermostatModes", value: groovy.json.JsonOutput.toJson(["heat", "cool", "auto", "off", "emergency heat"]))
+    sendEvent(name: "supportedThermostatFanModes", value: groovy.json.JsonOutput.toJson(["auto", "on", "circulate"]))
 
     // Schedule auto refresh if enabled
     if (autoRefresh && autoRefresh > 0) {
@@ -109,8 +109,8 @@ def updated() {
 
 def initialize() {
     // Ensure supported modes are set (for devices installed before this was added)
-    sendEvent(name: "supportedThermostatModes", value: ["heat", "cool", "auto", "off", "emergency heat"])
-    sendEvent(name: "supportedThermostatFanModes", value: ["auto", "on", "circulate"])
+    sendEvent(name: "supportedThermostatModes", value: groovy.json.JsonOutput.toJson(["heat", "cool", "auto", "off", "emergency heat"]))
+    sendEvent(name: "supportedThermostatFanModes", value: groovy.json.JsonOutput.toJson(["auto", "on", "circulate"]))
 
     // Initial refresh
     refresh()
