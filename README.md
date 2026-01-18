@@ -184,6 +184,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.2.4** - Fix Groovy scoping error in supported modes initialization
 - **v1.2.3** - Fix supported thermostat modes not populating for existing devices
 - **v1.2.2** - Emergency heat restores previous mode if not supported
 - **v1.2.1** - Emergency heat now verifies thermostat support, shows error if not available
