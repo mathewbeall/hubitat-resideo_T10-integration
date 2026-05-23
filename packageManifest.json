@@ -1,10 +1,10 @@
 {
     "packageName": "Hubitat Resideo T10 Integration",
     "author": "Mathew Beall",
-    "version": "1.5.2",
+    "version": "1.5.3",
     "minimumHEVersion": "2.2.4",
-    "dateReleased": "2026-01-18",
-    "releaseNotes": "Fix duplicate discovery cycles - prevent double API calls when scheduled and manual refresh overlap",
+    "dateReleased": "2026-05-23",
+    "releaseNotes": "Fix broken API connectivity - migrate from expired api.honeywell.com to api.honeywellhome.com (Issue #12)",
     "documentationLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration/blob/main/README.md",
     "communityLink": "https://github.com/mathewbeall/hubitat-resideo_T10-integration",
     "apps": [

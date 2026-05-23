@@ -247,7 +247,7 @@ def oauthInitialize() {
             redirect_uri: buildRedirectUrl()
         ]
 
-        def authUrl = "https://api.honeywell.com/oauth2/authorize?" +
+        def authUrl = "https://api.honeywellhome.com/oauth2/authorize?" +
             oauthParams.collect { key, value -> "${key}=${java.net.URLEncoder.encode(value.toString(), 'UTF-8')}" }.join('&')
 
         logDebug "Authorization URL: ${authUrl}"
@@ -567,7 +567,7 @@ def discoverThermostats() {
     }
 
     def params = [
-        uri: "https://api.honeywell.com/v2/locations",
+        uri: "https://api.honeywellhome.com/v2/locations",
         query: [apikey: settings.clientId],
         headers: [
             'Authorization': "Bearer ${state.resideoAccessToken}",
@@ -624,7 +624,7 @@ def refreshAccessToken() {
     def credentialsB64 = credentials.bytes.encodeBase64()
 
     def params = [
-        uri: "https://api.honeywell.com/oauth2/token",
+        uri: "https://api.honeywellhome.com/oauth2/token",
         headers: [
             'Authorization': "Basic ${credentialsB64}",
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -989,7 +989,7 @@ def sendThermostatCommand(deviceId, command, parameters = [:]) {
     log.info "JSON being sent: ${jsonString}"
 
     def params = [
-        uri: "https://api.honeywell.com/v2/devices/thermostats/${deviceId}",
+        uri: "https://api.honeywellhome.com/v2/devices/thermostats/${deviceId}",
         query: [
             locationId: locationId,
             apikey: settings.clientId
@@ -1113,7 +1113,7 @@ def sendFanCommand(deviceId, locationId, fanMode) {
     logDebug "Fan JSON string being sent: ${jsonString}"
 
     def params = [
-        uri: "https://api.honeywell.com/v2/devices/thermostats/${deviceId}/fan",
+        uri: "https://api.honeywellhome.com/v2/devices/thermostats/${deviceId}/fan",
         query: [
             apikey: settings.clientId,
             locationId: locationId
@@ -1224,7 +1224,7 @@ def getRoomPriorityData(deviceId) {
 
 def getPrioritySettings(deviceId, locationId) {
     def params = [
-        uri: "https://api.honeywell.com/v2/devices/thermostats/${deviceId}/priority",
+        uri: "https://api.honeywellhome.com/v2/devices/thermostats/${deviceId}/priority",
         query: [
             apikey: settings.clientId,
             locationId: locationId
@@ -1267,7 +1267,7 @@ def setPrioritySettings(deviceId, locationId, priorityType, selectedRooms = null
     logDebug "Priority JSON string being sent: ${jsonString}"
 
     def params = [
-        uri: "https://api.honeywell.com/v2/devices/thermostats/${deviceId}/priority",
+        uri: "https://api.honeywellhome.com/v2/devices/thermostats/${deviceId}/priority",
         query: [
             apikey: settings.clientId,
             locationId: locationId
@@ -1307,7 +1307,7 @@ def setPrioritySettings(deviceId, locationId, priorityType, selectedRooms = null
 
 def getRoomData(deviceId, locationId, groupId = 0) {
     def params = [
-        uri: "https://api.honeywell.com/v2/devices/thermostats/${deviceId}/group/${groupId}/rooms",
+        uri: "https://api.honeywellhome.com/v2/devices/thermostats/${deviceId}/group/${groupId}/rooms",
         query: [
             apikey: settings.clientId,
             locationId: locationId
@@ -1339,7 +1339,7 @@ def getRoomData(deviceId, locationId, groupId = 0) {
 def testApiAccess() {
     // Test basic API access with a simple locations call
     def params = [
-        uri: "https://api.honeywell.com/v2/locations",
+        uri: "https://api.honeywellhome.com/v2/locations",
         query: [
             apikey: settings.clientId
         ],
@@ -1551,7 +1551,7 @@ def exchangeCodeForTokens(code) {
     def credentialsB64 = credentials.bytes.encodeBase64()
 
     def params = [
-        uri: "https://api.honeywell.com/oauth2/token",
+        uri: "https://api.honeywellhome.com/oauth2/token",
         headers: [
             'Authorization': "Basic ${credentialsB64}",
             'Content-Type': 'application/x-www-form-urlencoded'
