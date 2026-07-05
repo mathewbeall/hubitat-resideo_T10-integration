@@ -708,6 +708,7 @@ def installThermostat(thermostat) {
 
         // Initial update
         updateThermostat(childDevice, thermostat)
+        discoverAndInstallSensors(thermostat)
 
         return true  // Installation successful
 
@@ -715,6 +716,59 @@ def installThermostat(thermostat) {
         log.error "Error installing thermostat ${name}: ${e.message}"
         return false  // Installation failed
     }
+}
+
+def discoverAndInstallSensors(thermostat) {
+    def deviceId = thermostat.deviceID
+    def locationId = thermostat.locationID
+    def nativeUnit = thermostat.units?.startsWith("C") ? "C" : "F"
+
+    def roomData = getRoomData(deviceId, locationId)
+    if (!roomData?.rooms) return
+
+    roomData.rooms.each { room ->
+        room.accessories?.each { accessory ->
+            def attr = accessory.accessoryAttribute
+            def val = accessory.accessoryValue
+            if (!attr || attr.type == "Thermostat") return
+
+            def serialNumber = attr.serialNumber
+            def dni = "${deviceId}-sensor-${serialNumber}"
+            def sensorName = "${room.name} Sensor"
+
+            def childDevice = getChildDevice(dni)
+            if (!childDevice) {
+                try {
+                    log.info "Creating remote sensor child: ${sensorName} (${dni})"
+                    childDevice = addChildDevice("mathewbeall", "Resideo Remote Sensor", dni, null,
+                        [name: sensorName, label: sensorName, isComponent: false])
+                } catch (Exception e) {
+                    log.warn "Could not create sensor child device '${sensorName}' — is the 'Resideo Remote Sensor' driver installed? (${e.message})"
+                    return
+                }
+            }
+
+            updateSensor(childDevice, room, accessory, nativeUnit)
+        }
+    }
+}
+
+def updateSensor(device, room, accessory, nativeUnit) {
+    def attr = accessory.accessoryAttribute
+    def val = accessory.accessoryValue
+    if (!val) return
+
+    device.updateSensorData([
+        roomName         : room.name,
+        nativeUnit       : nativeUnit,
+        indoorTemperature: val.indoorTemperature,
+        indoorHumidity   : val.indoorHumidity,
+        motionDet        : val.motionDet,
+        occupancyDet     : val.occupancyDet,
+        batteryStatus    : val.batteryStatus,
+        rssiAverage      : val.rssiAverage,
+        sensorType       : attr.type
+    ])
 }
 
 /**
@@ -757,6 +811,10 @@ def updateAllDevices() {
 
     getChildDevices().each { device ->
         def deviceId = device.deviceNetworkId
+
+        // Skip sensor child devices - they are updated separately below
+        if (deviceId.contains("-sensor-")) return
+
         def thermostat = state.thermostats?.find { it.deviceID == deviceId }
 
         if (thermostat) {
@@ -764,6 +822,11 @@ def updateAllDevices() {
         } else {
             log.warn "Could not find thermostat data for device: ${device.displayName}"
         }
+    }
+
+    // Update remote sensor children for each thermostat
+    state.thermostats?.each { thermostat ->
+        discoverAndInstallSensors(thermostat)
     }
 }
 

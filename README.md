@@ -201,6 +201,7 @@ if (presence is "not present") {
 
 ## 📈 Version History
 
+- **v1.6.0** - Add remote sensors as child devices - T10 room sensors now appear as individual Hubitat devices with temperature, humidity, motion, and occupancy reporting (Issue #14)
 - **v1.5.3** - Fix broken API connectivity - migrate from expired api.honeywell.com to api.honeywellhome.com (Issue #12)
 - **v1.5.2** - Fix duplicate discovery cycles - prevent double API calls when scheduled and manual refresh overlap (Issue #10)
 - **v1.5.1** - Fix Fahrenheit down button - dashboard 0.5 increments now round in correct direction (Issue #8)
