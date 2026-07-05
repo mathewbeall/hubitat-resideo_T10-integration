@@ -738,9 +738,14 @@ def discoverAndInstallSensors(thermostat) {
 
             def childDevice = getChildDevice(dni)
             if (!childDevice) {
-                log.info "Creating remote sensor child: ${sensorName} (${dni})"
-                childDevice = addChildDevice("mathewbeall", "Resideo Remote Sensor", dni, null,
-                    [name: sensorName, label: sensorName, isComponent: false])
+                try {
+                    log.info "Creating remote sensor child: ${sensorName} (${dni})"
+                    childDevice = addChildDevice("mathewbeall", "Resideo Remote Sensor", dni, null,
+                        [name: sensorName, label: sensorName, isComponent: false])
+                } catch (Exception e) {
+                    log.warn "Could not create sensor child device '${sensorName}' — is the 'Resideo Remote Sensor' driver installed? (${e.message})"
+                    return
+                }
             }
 
             updateSensor(childDevice, room, accessory, nativeUnit)
